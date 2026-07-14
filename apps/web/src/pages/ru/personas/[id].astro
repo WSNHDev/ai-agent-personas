@@ -1,0 +1,20 @@
+---
+import type { PersonaManifestV1 } from "@ai-agent-personas/core";
+import DetailPage from "@/components/DetailPage.astro";
+import { loadPersonas } from "@/lib/persona-data";
+
+export function getStaticPaths() {
+  return loadPersonas().map((persona) => ({
+    params: { id: persona.id },
+    props: { persona },
+  }));
+}
+
+interface Props {
+  persona: PersonaManifestV1;
+}
+
+const { persona } = Astro.props;
+---
+
+<DetailPage locale="ru" persona={persona} />

@@ -1,0 +1,17 @@
+node_modules/
+.pnpm-store/
+dist/
+.astro/
+coverage/
+.cache/
+.promptfoo/
+promptfoo-output/
+eval-results.html
+eval-results.json
+eval-attestation.json
+*.log
+.DS_Store
+Thumbs.db
+.env
+.env.*
+!.env.example

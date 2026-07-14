@@ -1,0 +1,68 @@
+---
+import type { PersonaLocale } from "@ai-agent-personas/core";
+import SiteFooter from "@/components/SiteFooter.astro";
+import SiteHeader from "@/components/SiteHeader.astro";
+import "@/styles/global.css";
+
+interface Props {
+  locale: PersonaLocale;
+  title?: string;
+  description?: string;
+  alternatePath?: string;
+}
+
+const {
+  locale,
+  title = "AI Agent Personas",
+  description =
+    "Seven original, safety-aware personas for AI agents — bilingual and ready for any LLM.",
+  alternatePath,
+} = Astro.props;
+
+const pageTitle = title === "AI Agent Personas" ? title : `${title} · AI Agent Personas`;
+const site = Astro.site ?? new URL("https://wsnhdev.github.io");
+const canonicalUrl = new URL(Astro.url.pathname, site).toString();
+const alternateUrl = alternatePath ? new URL(alternatePath, site).toString() : undefined;
+const ogLocale = locale === "en" ? "en_US" : "ru_RU";
+---
+
+<!doctype html>
+<html lang={locale}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="description" content={description} />
+    <meta name="robots" content="index, follow" />
+    <meta name="theme-color" content="#08090B" />
+    <link rel="canonical" href={canonicalUrl} />
+    {alternateUrl && <link rel="alternate" hreflang={locale === "en" ? "ru" : "en"} href={alternateUrl} />}
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="AI Agent Personas" />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:locale" content={ogLocale} />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content={pageTitle} />
+    <meta name="twitter:description" content={description} />
+    <link rel="icon" type="image/svg+xml" href={`${import.meta.env.BASE_URL}favicon.svg`} />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <title>{pageTitle}</title>
+    <slot name="head" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">
+      {locale === "en" ? "Skip to content" : "К содержанию"}
+    </a>
+    <SiteHeader locale={locale} alternatePath={alternatePath} />
+    <main id="main-content">
+      <slot />
+    </main>
+    <SiteFooter locale={locale} />
+  </body>
+</html>

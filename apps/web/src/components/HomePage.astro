@@ -1,0 +1,145 @@
+---
+import type { PersonaLocale } from "@ai-agent-personas/core";
+import PersonaRail from "@/components/PersonaRail.astro";
+import PersonaSigil from "@/components/PersonaSigil.astro";
+import PromptWorkbench from "@/components/PromptWorkbench.astro";
+import UiIcon from "@/components/UiIcon.astro";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { compilePromptMap, loadPersonas } from "@/lib/persona-data";
+import { copy, localePath, personaPath } from "@/lib/site";
+
+interface Props {
+  locale: PersonaLocale;
+}
+
+const { locale } = Astro.props;
+const t = copy[locale];
+const personas = loadPersonas();
+const detective = personas.find((persona) => persona.id === "detective");
+
+if (!detective) {
+  throw new Error("Built-in detective persona is required for the home preview.");
+}
+
+const localizedDetective = detective.locales[locale];
+const detectivePrompts = compilePromptMap(detective.id);
+const alternateHome = localePath(locale === "en" ? "ru" : "en");
+
+const qualityItems =
+  locale === "en"
+    ? [
+        ["01", "Task before theatre", "The answer remains accurate and actionable before it becomes atmospheric."],
+        ["02", "Boundaries stay visible", "Every persona carries explicit safety rules and respects user agency."],
+        ["03", "Portable by design", "Compile one clean system prompt for any model, tool, or framework."],
+      ]
+    : [
+        ["01", "Задача важнее театра", "Ответ остаётся точным и применимым ещё до того, как становится атмосферным."],
+        ["02", "Границы всегда видны", "У каждой персоны есть явные правила безопасности и уважение к свободе пользователя."],
+        ["03", "Работает где угодно", "Соберите чистый системный промпт для любой модели, инструмента или фреймворка."],
+      ];
+---
+
+<BaseLayout
+  locale={locale}
+  alternatePath={alternateHome}
+  description={t.home.support}
+>
+  <section class="home-hero" aria-labelledby="home-title">
+    <div class="home-hero__main">
+      <div class="home-hero__copy">
+        <span class="eyebrow">{t.home.eyebrow}</span>
+        <h1 id="home-title">{t.home.title}</h1>
+        <p class="home-hero__support">{t.home.support}</p>
+        <div class="home-hero__actions">
+          <a class="button button--primary" href={localePath(locale, "personas")}>
+            <UiIcon name="spark" />
+            {t.home.explore}
+          </a>
+          <a class="button button--text" href="#cli">
+            {t.home.install}
+            <UiIcon name="arrow" />
+          </a>
+        </div>
+      </div>
+
+      <PromptWorkbench
+        persona={detective}
+        locale={locale}
+        prompts={detectivePrompts}
+        mode="preview"
+      >
+        <div class="hero-workspace__identity" slot="identity">
+          <div>
+            <span class="eyebrow">{t.home.selected}</span>
+            <h2>{localizedDetective.name}</h2>
+            <p>{localizedDetective.traits.join(" · ")}</p>
+          </div>
+          <PersonaSigil
+            id="detective"
+            color={detective.color}
+            label={localizedDetective.name}
+            size="small"
+          />
+        </div>
+      </PromptWorkbench>
+    </div>
+
+    <div class="home-hero__rail" aria-label={t.nav.personas}>
+      <PersonaRail personas={personas} locale={locale} selectedId="detective" />
+    </div>
+  </section>
+
+  <section class="editorial-section" id="how-it-works" aria-labelledby="quality-title">
+    <div class="shell">
+      <div class="editorial-section__intro">
+        <div>
+          <span class="eyebrow">{t.nav.how}</span>
+          <h2 id="quality-title">{t.home.principlesTitle}</h2>
+        </div>
+        <p>{t.home.principlesSupport}</p>
+      </div>
+
+      <div class="quality-contract">
+        {
+          qualityItems.map(([number, title, text]) => (
+            <article class="quality-contract__item">
+              <span class="quality-contract__number">{number}</span>
+              <h3>{title}</h3>
+              <p>{text}</p>
+            </article>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <section class="editorial-section" id="cli" aria-labelledby="cli-title">
+    <div class="shell cli-section">
+      <div>
+        <span class="eyebrow">{t.nav.cli}</span>
+        <h2 id="cli-title">
+          {locale === "en" ? "A full cast, one command away." : "Весь состав — одной командой."}
+        </h2>
+        <p>
+          {
+            locale === "en"
+              ? "Inspect, compile, copy, export, and validate personas from the terminal. No vendor lock-in and no runtime service."
+              : "Просматривайте, собирайте, копируйте, экспортируйте и проверяйте персоны из терминала — без привязки к модели и внешнего сервиса."
+          }
+        </p>
+      </div>
+      <div>
+        <div class="command-band">
+          <span class="command-band__lead">
+            <UiIcon name="terminal" />
+            <code>npx ai-agent-personas list</code>
+          </span>
+        </div>
+        <a class="button button--text" href={personaPath(locale, "detective")}>
+          {t.home.openPersona}
+          <UiIcon name="arrow" />
+        </a>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

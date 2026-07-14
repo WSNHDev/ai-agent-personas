@@ -1,0 +1,42 @@
+---
+import type { PersonaLocale, PersonaManifestV1 } from "@ai-agent-personas/core";
+import PersonaSigil from "@/components/PersonaSigil.astro";
+import { personaPath, type PersonaId } from "@/lib/site";
+
+interface Props {
+  personas: PersonaManifestV1[];
+  locale: PersonaLocale;
+  selectedId?: string;
+  labelledBy?: string;
+}
+
+const { personas, locale, selectedId, labelledBy } = Astro.props;
+---
+
+<ul class="persona-rail" aria-labelledby={labelledBy} data-persona-list>
+  {
+    personas.map((persona) => {
+      const localized = persona.locales[locale];
+      const id = persona.id as PersonaId;
+
+      return (
+        <li
+          class="persona-rail__entry"
+          data-persona-item
+          data-category={persona.category}
+          style={`--persona-color: ${persona.color}`}
+        >
+          <a
+            class:list={["persona-rail__item", { "is-selected": selectedId === id }]}
+            href={personaPath(locale, id)}
+            aria-current={selectedId === id ? "true" : undefined}
+          >
+            <PersonaSigil id={id} color={persona.color} label={localized.name} size="medium" />
+            <span class="persona-rail__name">{localized.name}</span>
+            <span class="persona-rail__summary">{localized.summary}</span>
+          </a>
+        </li>
+      );
+    })
+  }
+</ul>

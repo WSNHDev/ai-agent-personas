@@ -1,0 +1,232 @@
+---
+import type { PersonaLocale, PersonaManifestV1 } from "@ai-agent-personas/core";
+import PersonaControls from "@/components/PersonaControls.astro";
+import PersonaSigil from "@/components/PersonaSigil.astro";
+import PromptWorkbench from "@/components/PromptWorkbench.astro";
+import UiIcon from "@/components/UiIcon.astro";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { compilePromptMap } from "@/lib/persona-data";
+import { copy, localePath, personaPath, type PersonaId } from "@/lib/site";
+
+interface Props {
+  locale: PersonaLocale;
+  persona: PersonaManifestV1;
+}
+
+const { locale, persona } = Astro.props;
+const t = copy[locale];
+const localized = persona.locales[locale];
+const id = persona.id as PersonaId;
+const prompts = compilePromptMap(persona.id);
+const alternateDetail = personaPath(locale === "en" ? "ru" : "en", persona.id);
+const tabPrefix = `${persona.id}-${locale}`;
+const safetyRules = persona.safety.rules[locale];
+const cliCommand = `npx ai-agent-personas show ${persona.id} --locale ${locale} --intensity balanced`;
+---
+
+<BaseLayout
+  locale={locale}
+  title={localized.name}
+  description={localized.summary}
+  alternatePath={alternateDetail}
+>
+  <section class="detail-hero" aria-labelledby="persona-title">
+    <div class="detail-hero__inner shell">
+      <p class="breadcrumbs">
+        <a href={localePath(locale, "personas")}>{t.detail.back}</a>
+        <span aria-hidden="true">/</span>
+        <span>{localized.name}</span>
+      </p>
+
+      <div class="detail-hero__sigil">
+        <PersonaSigil id={id} color={persona.color} label={localized.name} size="large" />
+      </div>
+
+      <div class="detail-hero__content">
+        <h1 id="persona-title">{localized.name}</h1>
+        <hr class="section-rule" />
+        <p class="detail-hero__summary">{localized.summary}</p>
+        <ul class="detail-hero__traits" aria-label={locale === "en" ? "Traits" : "Черты"}>
+          {localized.traits.map((trait) => <li>{trait}</li>)}
+        </ul>
+        <PersonaControls personaId={persona.id} locale={locale} />
+      </div>
+    </div>
+  </section>
+
+  <section class="detail-workspace" id="workbench" aria-labelledby="workbench-title">
+    <aside class="principle-panel">
+      <h2 id="workbench-title">{t.detail.principles}</h2>
+      <ul class="principle-list">
+        {
+          localized.principles.map((principle, index) => (
+            <li>
+              <UiIcon name={index % 2 === 0 ? "spark" : "check"} />
+              <span>{principle}</span>
+              <span class="principle-list__number">{String(index + 1).padStart(2, "0")}</span>
+            </li>
+          ))
+        }
+      </ul>
+    </aside>
+
+    <div class="workbench-panel" data-tabset>
+      <div class="detail-tabs" role="tablist" aria-label={localized.name}>
+        <button
+          class="detail-tab"
+          id={`${tabPrefix}-tab-prompt`}
+          type="button"
+          role="tab"
+          aria-selected="true"
+          aria-controls={`${tabPrefix}-panel-prompt`}
+          data-tab="prompt"
+        >
+          {t.detail.prompt}
+        </button>
+        <button
+          class="detail-tab"
+          id={`${tabPrefix}-tab-examples`}
+          type="button"
+          role="tab"
+          aria-selected="false"
+          aria-controls={`${tabPrefix}-panel-examples`}
+          tabindex="-1"
+          data-tab="examples"
+        >
+          {t.detail.examples}
+        </button>
+        <button
+          class="detail-tab"
+          id={`${tabPrefix}-tab-safety`}
+          type="button"
+          role="tab"
+          aria-selected="false"
+          aria-controls={`${tabPrefix}-panel-safety`}
+          tabindex="-1"
+          data-tab="safety"
+        >
+          {t.detail.safety}
+        </button>
+      </div>
+
+      <div
+        class="tab-panel"
+        id={`${tabPrefix}-panel-prompt`}
+        role="tabpanel"
+        aria-labelledby={`${tabPrefix}-tab-prompt`}
+        data-tab-panel="prompt"
+      >
+        <PromptWorkbench
+          persona={persona}
+          locale={locale}
+          prompts={prompts}
+          mode="detail"
+          instance="content"
+        />
+      </div>
+
+      <div
+        class="tab-panel"
+        id={`${tabPrefix}-panel-examples`}
+        role="tabpanel"
+        aria-labelledby={`${tabPrefix}-tab-examples`}
+        data-tab-panel="examples"
+        hidden
+      >
+        <dl class="examples-list">
+          {
+            localized.examples.map((example) => (
+              <div class="example-row">
+                <dt>{t.detail.user}</dt>
+                <dd>{example.user}</dd>
+                <dt>{t.detail.assistant}</dt>
+                <dd>{example.assistant}</dd>
+              </div>
+            ))
+          }
+        </dl>
+      </div>
+
+      <div
+        class="tab-panel"
+        id={`${tabPrefix}-panel-safety`}
+        role="tabpanel"
+        aria-labelledby={`${tabPrefix}-tab-safety`}
+        data-tab-panel="safety"
+        hidden
+      >
+        <div class="safety-content">
+          <div class="safety-rating">
+            <UiIcon name="check" size={28} />
+            <div>
+              <span class="eyebrow">{t.detail.safetyRating}</span>
+              <strong>{persona.safety.rating}</strong>
+            </div>
+          </div>
+          <ul class="safety-list">
+            {
+              safetyRules.map((rule) => (
+                <li>
+                  <UiIcon name="check" />
+                  <span>{rule}</span>
+                </li>
+              ))
+            }
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="detail-command shell" aria-labelledby="command-title">
+    <span class="eyebrow" id="command-title">{t.detail.command}</span>
+    <div class="command-band">
+      <span class="command-band__lead">
+        <UiIcon name="terminal" />
+        <code>{cliCommand}</code>
+      </span>
+    </div>
+  </section>
+</BaseLayout>
+
+<script>
+  function initializeTabset(tabset: HTMLElement) {
+    if (tabset.dataset.ready === "true") return;
+    tabset.dataset.ready = "true";
+
+    const tabs = Array.from(tabset.querySelectorAll<HTMLButtonElement>("[role='tab']"));
+    const panels = Array.from(tabset.querySelectorAll<HTMLElement>("[role='tabpanel']"));
+
+    const selectTab = (next: HTMLButtonElement, moveFocus = false) => {
+      tabs.forEach((tab) => {
+        const selected = tab === next;
+        tab.setAttribute("aria-selected", String(selected));
+        tab.tabIndex = selected ? 0 : -1;
+      });
+      panels.forEach((panel) => {
+        panel.hidden = panel.dataset.tabPanel !== next.dataset.tab;
+      });
+      if (moveFocus) next.focus();
+    };
+
+    tabs.forEach((tab, index) => {
+      tab.addEventListener("click", () => selectTab(tab));
+      tab.addEventListener("keydown", (event) => {
+        let nextIndex: number | undefined;
+        if (event.key === "ArrowRight") nextIndex = (index + 1) % tabs.length;
+        if (event.key === "ArrowLeft") nextIndex = (index - 1 + tabs.length) % tabs.length;
+        if (event.key === "Home") nextIndex = 0;
+        if (event.key === "End") nextIndex = tabs.length - 1;
+        if (nextIndex === undefined) return;
+        event.preventDefault();
+        const next = tabs[nextIndex];
+        if (next) selectTab(next, true);
+      });
+    });
+  }
+
+  document.querySelectorAll<HTMLElement>("[data-tabset]").forEach(initializeTabset);
+  document.addEventListener("astro:page-load", () => {
+    document.querySelectorAll<HTMLElement>("[data-tabset]").forEach(initializeTabset);
+  });
+</script>

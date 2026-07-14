@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /ai-agent-personas/
+
+Sitemap: https://wsnhdev.github.io/ai-agent-personas/sitemap.xml

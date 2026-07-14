@@ -1,0 +1,29 @@
+{
+  "name": "ai-agent-personas-workspace",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.7.0",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "build": "pnpm -r build",
+    "predev": "pnpm --filter @ai-agent-personas/core build",
+    "dev": "pnpm --filter @ai-agent-personas/web dev",
+    "test": "pnpm build && pnpm -r test",
+    "typecheck": "pnpm --filter @ai-agent-personas/core build && pnpm -r typecheck",
+    "lint": "pnpm --filter @ai-agent-personas/core build && pnpm -r lint",
+    "validate": "pnpm --filter @ai-agent-personas/core build && pnpm --filter @ai-agent-personas/core validate",
+    "check": "pnpm build && pnpm -r lint && pnpm -r typecheck && pnpm -r test && pnpm test:scripts && pnpm --filter @ai-agent-personas/core validate",
+    "preeval": "pnpm build",
+    "eval": "node scripts/promptfoo.mjs eval -c evals/promptfooconfig.yaml",
+    "eval:validate": "node scripts/promptfoo.mjs validate config -c evals/promptfooconfig.yaml",
+    "eval:view": "node scripts/promptfoo.mjs view",
+    "test:scripts": "node --test scripts/*.test.mjs",
+    "release:verify": "node scripts/verify-release.mjs"
+  },
+  "devDependencies": {
+    "promptfoo": "^0.121.18"
+  }
+}

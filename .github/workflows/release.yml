@@ -1,0 +1,193 @@
+name: Publish npm package
+
+on:
+  release:
+    types:
+      - published
+
+permissions:
+  actions: read
+  contents: read
+  id-token: write
+
+concurrency:
+  group: npm-release
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Verify and publish ai-agent-personas
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: npm
+    steps:
+      - name: Check out the release tag
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        with:
+          ref: ${{ github.event.release.tag_name }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Verify the release commit belongs to main
+        id: release_commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          release_commit=$(git rev-parse 'HEAD^{commit}')
+          git show-ref --verify --quiet refs/remotes/origin/main
+          if ! git merge-base --is-ancestor "$release_commit" refs/remotes/origin/main; then
+            echo "Release commit $release_commit is not an ancestor of origin/main." >&2
+            exit 1
+          fi
+          echo "commit=$release_commit" >> "$GITHUB_OUTPUT"
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+          registry-url: https://registry.npmjs.org
+
+      - name: Download the successful evaluation attestation
+        id: evaluation
+        shell: bash
+        env:
+          GH_REPOSITORY: ${{ github.repository }}
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_COMMIT: ${{ steps.release_commit.outputs.commit }}
+        run: |
+          set -euo pipefail
+          api="https://api.github.com/repos/$GH_REPOSITORY"
+          runs_json="$RUNNER_TEMP/evaluation-runs.json"
+          artifacts_json="$RUNNER_TEMP/evaluation-artifacts.json"
+          archive="$RUNNER_TEMP/persona-evaluation.zip"
+          directory="$RUNNER_TEMP/persona-evaluation"
+
+          curl --fail-with-body --silent --show-error --get \
+            --header "Authorization: Bearer $GH_TOKEN" \
+            --header "Accept: application/vnd.github+json" \
+            --header "X-GitHub-Api-Version: 2022-11-28" \
+            --data-urlencode "event=workflow_dispatch" \
+            --data-urlencode "status=success" \
+            --data-urlencode "head_sha=$RELEASE_COMMIT" \
+            --data-urlencode "per_page=100" \
+            "$api/actions/workflows/eval.yml/runs" > "$runs_json"
+
+          run_record=$(jq -r --arg commit "$RELEASE_COMMIT" '
+            [.workflow_runs[]
+              | select(
+                  .head_sha == $commit and
+                  .event == "workflow_dispatch" and
+                  .status == "completed" and
+                  .conclusion == "success"
+                )]
+            | sort_by(.run_number)
+            | last
+            | if . == null then empty else [.id, .run_attempt] | @tsv end
+          ' "$runs_json")
+          IFS=$'\t' read -r run_id run_attempt <<< "$run_record"
+          if [[ ! "$run_id" =~ ^[1-9][0-9]*$ || ! "$run_attempt" =~ ^[1-9][0-9]*$ ]]; then
+            echo "No successful manual evaluation run exists for $RELEASE_COMMIT." >&2
+            exit 1
+          fi
+
+          curl --fail-with-body --silent --show-error --get \
+            --header "Authorization: Bearer $GH_TOKEN" \
+            --header "Accept: application/vnd.github+json" \
+            --header "X-GitHub-Api-Version: 2022-11-28" \
+            --data-urlencode "per_page=100" \
+            "$api/actions/runs/$run_id/artifacts" > "$artifacts_json"
+
+          artifact_name="persona-evaluation-$RELEASE_COMMIT"
+          artifact_id=$(jq -r --arg name "$artifact_name" '
+            [.artifacts[] | select(.name == $name and (.expired | not))]
+            | sort_by(.created_at)
+            | last
+            | .id // empty
+          ' "$artifacts_json")
+          if [[ ! "$artifact_id" =~ ^[1-9][0-9]*$ ]]; then
+            echo "Run $run_id has no unexpired $artifact_name artifact." >&2
+            exit 1
+          fi
+
+          curl --fail-with-body --silent --show-error --location \
+            --header "Authorization: Bearer $GH_TOKEN" \
+            --header "Accept: application/vnd.github+json" \
+            --header "X-GitHub-Api-Version: 2022-11-28" \
+            "$api/actions/artifacts/$artifact_id/zip" \
+            --output "$archive"
+          mkdir -p "$directory"
+          unzip -q "$archive" -d "$directory"
+          test -f "$directory/eval-attestation.json"
+          test -f "$directory/eval-results.json"
+
+          echo "directory=$directory" >> "$GITHUB_OUTPUT"
+          echo "run_attempt=$run_attempt" >> "$GITHUB_OUTPUT"
+          echo "run_id=$run_id" >> "$GITHUB_OUTPUT"
+
+      - name: Verify evaluation provenance and content
+        env:
+          EVAL_ARTIFACT_DIRECTORY: ${{ steps.evaluation.outputs.directory }}
+          EVAL_RUN_ATTEMPT: ${{ steps.evaluation.outputs.run_attempt }}
+          EVAL_RUN_ID: ${{ steps.evaluation.outputs.run_id }}
+          GH_REPOSITORY: ${{ github.repository }}
+          RELEASE_COMMIT: ${{ steps.release_commit.outputs.commit }}
+        run: >-
+          node scripts/verify-eval-attestation.mjs
+          --attestation "$EVAL_ARTIFACT_DIRECTORY/eval-attestation.json"
+          --config evals/promptfooconfig.yaml
+          --results "$EVAL_ARTIFACT_DIRECTORY/eval-results.json"
+          --commit "$RELEASE_COMMIT"
+          --run-id "$EVAL_RUN_ID"
+          --run-attempt "$EVAL_RUN_ATTEMPT"
+          --repository "$GH_REPOSITORY"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run deterministic release checks
+        run: pnpm check
+
+      - name: Verify tag and package versions
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: node scripts/verify-release.mjs "$RELEASE_TAG"
+
+      - name: Smoke-test a clean tarball install
+        run: pnpm --filter ai-agent-personas test:pack
+
+      - name: Pack the release artifact
+        id: pack
+        shell: bash
+        run: |
+          VERSION=$(node -p "require('./packages/cli/package.json').version")
+          pnpm --dir packages/cli pack --pack-destination "$RUNNER_TEMP"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tarball=$RUNNER_TEMP/ai-agent-personas-$VERSION.tgz" >> "$GITHUB_OUTPUT"
+
+      - name: Retain the exact tarball
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: ai-agent-personas-${{ steps.pack.outputs.version }}
+          path: ${{ steps.pack.outputs.tarball }}
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Publish to npm with provenance
+        shell: bash
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          PACKAGE_VERSION: ${{ steps.pack.outputs.version }}
+          RELEASE_TARBALL: ${{ steps.pack.outputs.tarball }}
+        run: |
+          VERSION="$PACKAGE_VERSION"
+          DIST_TAG=latest
+          if [[ "$VERSION" == *-* ]]; then DIST_TAG=next; fi
+          npm publish "$RELEASE_TARBALL" \
+            --access public \
+            --provenance \
+            --tag "$DIST_TAG"

@@ -1,0 +1,43 @@
+---
+import type { PersonaLocale } from "@ai-agent-personas/core";
+import { copy, localePath, otherLocale } from "@/lib/site";
+
+interface Props {
+  locale: PersonaLocale;
+  alternatePath?: string;
+}
+
+const { locale, alternatePath } = Astro.props;
+const t = copy[locale];
+const alt = otherLocale(locale);
+const languageHref = alternatePath ?? localePath(alt);
+---
+
+<header class="site-header">
+  <div class="site-header__inner shell">
+    <a class="brand" href={localePath(locale)} aria-label="AI Agent Personas home">
+      <svg class="brand__mark" viewBox="0 0 40 48" aria-hidden="true">
+        <path d="M20 2 37 8v14c0 11-6.8 19-17 24C9.8 41 3 33 3 22V8Z" />
+        <path d="m12 34 8-21 8 21M15 27h10" />
+        <path d="m31 7 1.5 3.5L36 12l-3.5 1.5L31 17l-1.5-3.5L26 12l3.5-1.5Z" />
+      </svg>
+      <span>AI Agent Personas</span>
+    </a>
+
+    <nav class="main-nav" aria-label={locale === "en" ? "Main navigation" : "Основная навигация"}>
+      <a href={localePath(locale, "personas")}>{t.nav.personas}</a>
+      <a href={`${localePath(locale)}#how-it-works`}>{t.nav.how}</a>
+      <a href={`${localePath(locale)}#cli`}>{t.nav.cli}</a>
+      <a href="https://github.com/WSNHDev/ai-agent-personas">{t.nav.github}</a>
+    </nav>
+
+    <a class="language-switch" href={languageHref} hreflang={alt} lang={alt}>
+      <span class:list={{ active: locale === "en" }}>EN</span>
+      <span aria-hidden="true">/</span>
+      <span class:list={{ active: locale === "ru" }}>RU</span>
+      <span class="sr-only">
+        {locale === "en" ? "Перейти на русский" : "Switch to English"}
+      </span>
+    </a>
+  </div>
+</header>

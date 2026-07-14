@@ -1,0 +1,135 @@
+---
+import type { PersonaLocale } from "@ai-agent-personas/core";
+import PersonaRail from "@/components/PersonaRail.astro";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { loadPersonas } from "@/lib/persona-data";
+import { copy, localePath } from "@/lib/site";
+
+interface Props {
+  locale: PersonaLocale;
+}
+
+const { locale } = Astro.props;
+const t = copy[locale];
+const personas = loadPersonas();
+const alternateCatalog = localePath(locale === "en" ? "ru" : "en", "personas");
+const categories = ["all", ...new Set(personas.map((persona) => persona.category))];
+const categoryLabels = t.catalog as Record<string, string>;
+---
+
+<BaseLayout
+  locale={locale}
+  title={t.nav.personas}
+  description={t.catalog.support}
+  alternatePath={alternateCatalog}
+>
+  <section
+    class="catalog-hero shell"
+    aria-labelledby="catalog-title"
+    data-catalog
+    data-status-template={locale === "en" ? "{count} personas shown" : "Показано персон: {count}"}
+  >
+    <div class="catalog-hero__heading">
+      <span class="eyebrow">{t.catalog.eyebrow}</span>
+      <h1 id="catalog-title">{t.catalog.title}</h1>
+      <p class="catalog-hero__support">{t.catalog.support}</p>
+    </div>
+
+    <div class="catalog-filters" aria-label={locale === "en" ? "Filter personas" : "Фильтр персон"}>
+      {
+        categories.map((category, index) => (
+          <button
+            class="catalog-filter"
+            type="button"
+            aria-pressed={index === 0 ? "true" : "false"}
+            aria-controls="catalog-personas"
+            data-category-filter={category}
+          >
+            {categoryLabels[category] ?? category}
+          </button>
+        ))
+      }
+    </div>
+
+    <div class="catalog-list" id="catalog-personas">
+      <PersonaRail personas={personas} locale={locale} labelledBy="catalog-title" />
+      <p class="catalog-empty" hidden data-catalog-empty>{t.catalog.empty}</p>
+      <p class="sr-only" role="status" aria-live="polite" data-catalog-status></p>
+    </div>
+  </section>
+
+  <section class="intensity-section shell" aria-labelledby="intensity-title">
+    <div class="intensity-layout">
+      <div class="intensity-layout__title">
+        <h2 id="intensity-title">{t.catalog.intensityTitle}</h2>
+      </div>
+      <div class="intensity-band">
+        {
+          (["subtle", "balanced", "immersive"] as const).map((intensity, index) => (
+            <article class:list={["intensity-card", { "is-selected": intensity === "balanced" }]}>
+              <span class="intensity-card__number">{String(index + 1).padStart(2, "0")}</span>
+              {
+                intensity === "balanced" && (
+                  <span class="intensity-card__default">{t.catalog.defaultIntensity}</span>
+                )
+              }
+              <h3>{t.labels[intensity]}</h3>
+              <p>{t.intensityDescriptions[intensity]}</p>
+              <div class="intensity-meter" aria-hidden="true">
+                <span></span>
+                <i></i>
+                <span></span>
+                <i></i>
+                <span></span>
+              </div>
+            </article>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<script>
+  function initializeCatalog(catalog: HTMLElement) {
+    if (catalog.dataset.ready === "true") return;
+    catalog.dataset.ready = "true";
+
+    const buttons = Array.from(
+      catalog.querySelectorAll<HTMLButtonElement>("[data-category-filter]"),
+    );
+    const items = Array.from(catalog.querySelectorAll<HTMLElement>("[data-persona-item]"));
+    const empty = catalog.querySelector<HTMLElement>("[data-catalog-empty]");
+    const status = catalog.querySelector<HTMLElement>("[data-catalog-status]");
+
+    buttons.forEach((button) => {
+      button.addEventListener("click", () => {
+        const category = button.dataset.categoryFilter ?? "all";
+        let visible = 0;
+
+        buttons.forEach((candidate) => {
+          candidate.setAttribute("aria-pressed", String(candidate === button));
+        });
+
+        items.forEach((item) => {
+          const shouldShow = category === "all" || item.dataset.category === category;
+          item.hidden = !shouldShow;
+          if (shouldShow) visible += 1;
+        });
+
+        if (empty) empty.hidden = visible !== 0;
+        if (status) {
+          status.textContent = (catalog.dataset.statusTemplate ?? "{count}").replace(
+            "{count}",
+            String(visible),
+          );
+        }
+      });
+    });
+  }
+
+  document.querySelectorAll<HTMLElement>("[data-catalog]").forEach(initializeCatalog);
+  document.addEventListener("astro:page-load", () => {
+    document.querySelectorAll<HTMLElement>("[data-catalog]").forEach(initializeCatalog);
+  });
+</script>

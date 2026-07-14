@@ -1,0 +1,27 @@
+---
+import type { PersonaLocale } from "@ai-agent-personas/core";
+import { copy } from "@/lib/site";
+
+interface Props {
+  locale: PersonaLocale;
+}
+
+const { locale } = Astro.props;
+const t = copy[locale];
+---
+
+<footer class="site-footer">
+  <div class="site-footer__inner shell">
+    <p>{t.footer}</p>
+    <nav aria-label={locale === "en" ? "Footer navigation" : "Навигация в подвале"}>
+      <a href="https://github.com/WSNHDev/ai-agent-personas">GitHub</a>
+      <a href="https://github.com/WSNHDev/ai-agent-personas#readme">
+        {locale === "en" ? "Documentation" : "Документация"}
+      </a>
+      <a href="https://github.com/WSNHDev/ai-agent-personas/blob/main/CONTRIBUTING.md">
+        {locale === "en" ? "Contributing" : "Участие"}
+      </a>
+      <a href="https://github.com/WSNHDev/ai-agent-personas/blob/main/LICENSE">MIT</a>
+    </nav>
+  </div>
+</footer>

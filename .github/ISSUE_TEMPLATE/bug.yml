@@ -1,0 +1,59 @@
+name: Bug report
+description: Report a reproducible problem in the core package, CLI, website, or validation
+title: "bug: "
+labels:
+  - bug
+  - needs-triage
+body:
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Affected surface
+      options:
+        - Core package
+        - CLI
+        - Website
+        - Persona manifest
+        - Validation or tests
+        - Documentation
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+      placeholder: v1.0.0 or commit SHA
+    validations:
+      required: true
+  - type: textarea
+    id: current
+    attributes:
+      label: What happened?
+      description: Include the exact command, route, locale, and intensity when relevant.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Minimal reproduction
+      description: Do not include API keys, private prompts, or personal data.
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      placeholder: Windows 11, Node 24.16, pnpm 11.7, Chrome 140
+  - type: checkboxes
+    id: security
+    attributes:
+      label: Security check
+      options:
+        - label: This report does not expose a vulnerability, secret, or private data. I will use SECURITY.md for those cases.
+          required: true

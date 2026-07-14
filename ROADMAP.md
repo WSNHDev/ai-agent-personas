@@ -1,0 +1,34 @@
+# Roadmap
+
+## v1.0.0 — public foundation
+
+- [x] Seven original personas in English and Russian.
+- [x] Three intensity levels and a stable manifest schema.
+- [x] Typed core API and prompt compiler.
+- [x] npm CLI with list, show, copy, export, and validate commands.
+- [x] Static, accessible Astro catalog for GitHub Pages.
+- [x] Unit, schema, build, and optional model-based eval checks.
+- [x] Dual code/content licensing and contribution governance.
+- [ ] Complete the final release checklist in `docs/release.md`.
+- [ ] Publish `ai-agent-personas` to npm with provenance.
+- [ ] Change the repository from private to public.
+
+## v1.x — adoption
+
+- Generate TypeScript manifest types from the canonical JSON Schema and fail CI on generated drift.
+- Generate catalog membership, sitemap entries, and other derived indexes from validated manifests.
+- Centralize repository URL, site origin, and Pages base-path configuration for forks and custom domains.
+- Framework adapters for common agent SDKs, kept outside the canonical schema.
+- Community persona submission pipeline with preview builds.
+- Versioned compatibility fixtures for OpenAI, Anthropic, Google, and local models.
+- Public eval dashboard with cost, style-adherence, safety, and task-quality trends.
+- Search-engine metadata, social previews, and a public documentation domain.
+
+## v2 — composition
+
+- Composable voice, behavior, and domain modules.
+- User-authored persona overlays with deterministic conflict resolution.
+- Signed catalog releases and machine-readable provenance.
+- A stable adapter interface for agent runtimes and prompt registries.
+
+The project will not optimize for persona count at the expense of quality. A smaller catalog with distinct, tested behavior is the primary product advantage.

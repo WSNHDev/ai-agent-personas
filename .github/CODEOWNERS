@@ -1,0 +1,6 @@
+* @WSNHDev
+
+# Persona content and safety-sensitive behavior require explicit owner review.
+/personas/ @WSNHDev
+/packages/core/schema/ @WSNHDev
+/docs/safety.md @WSNHDev

@@ -1,0 +1,37 @@
+---
+import UiIcon from "@/components/UiIcon.astro";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { localePath } from "@/lib/site";
+---
+
+<BaseLayout locale="en" title="Page not found" description="The requested persona page could not be found.">
+  <section class="not-found shell" aria-labelledby="not-found-title">
+    <div class="not-found__panel" data-not-found-language="en">
+      <span class="not-found__code" aria-hidden="true">404</span>
+      <h1 id="not-found-title">This clue leads nowhere.</h1>
+      <p>The page may have moved, but the seven personas are still waiting in the catalogue.</p>
+      <a class="button button--primary" href={localePath("en", "personas")}>
+        Explore the personas
+        <UiIcon name="arrow" />
+      </a>
+    </div>
+
+    <div class="not-found__panel" data-not-found-language="ru" hidden>
+      <span class="not-found__code" aria-hidden="true">404</span>
+      <h1>Эта улика ведёт в никуда.</h1>
+      <p>Страница могла переехать, но все семь персон по-прежнему ждут в каталоге.</p>
+      <a class="button button--primary" href={localePath("ru", "personas")}>
+        Выбрать персону
+        <UiIcon name="arrow" />
+      </a>
+    </div>
+  </section>
+</BaseLayout>
+
+<script>
+  const locale = window.location.pathname.includes("/ru/") ? "ru" : "en";
+  document.documentElement.lang = locale;
+  document.querySelectorAll<HTMLElement>("[data-not-found-language]").forEach((panel) => {
+    panel.hidden = panel.dataset.notFoundLanguage !== locale;
+  });
+</script>

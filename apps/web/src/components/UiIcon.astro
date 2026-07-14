@@ -1,0 +1,90 @@
+---
+type Name =
+  | "arrow"
+  | "check"
+  | "chevron"
+  | "copy"
+  | "download"
+  | "globe"
+  | "spark"
+  | "terminal";
+
+interface Props {
+  name: Name;
+  size?: number;
+}
+
+const { name, size = 20 } = Astro.props;
+---
+
+<svg
+  class="ui-icon"
+  width={size}
+  height={size}
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="1.7"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+  aria-hidden="true"
+>
+  {
+    name === "arrow" && (
+      <>
+        <path d="M5 12h14" />
+        <path d="m14 7 5 5-5 5" />
+      </>
+    )
+  }
+  {
+    name === "check" && (
+      <>
+        <circle cx="12" cy="12" r="9" />
+        <path d="m8 12 2.5 2.5L16 9" />
+      </>
+    )
+  }
+  {name === "chevron" && <path d="m8 10 4 4 4-4" />}
+  {
+    name === "copy" && (
+      <>
+        <rect x="8" y="8" width="11" height="11" rx="1.5" />
+        <path d="M16 8V5.5A1.5 1.5 0 0 0 14.5 4h-10A1.5 1.5 0 0 0 3 5.5v10A1.5 1.5 0 0 0 4.5 17H8" />
+      </>
+    )
+  }
+  {
+    name === "download" && (
+      <>
+        <path d="M12 3v12" />
+        <path d="m7 10 5 5 5-5" />
+        <path d="M4 18v2h16v-2" />
+      </>
+    )
+  }
+  {
+    name === "globe" && (
+      <>
+        <circle cx="12" cy="12" r="9" />
+        <path d="M3 12h18M12 3c2.4 2.5 3.6 5.5 3.6 9S14.4 18.5 12 21c-2.4-2.5-3.6-5.5-3.6-9S9.6 5.5 12 3Z" />
+      </>
+    )
+  }
+  {
+    name === "spark" && (
+      <>
+        <path d="M12 2c0 5.5-2.5 10-8 10 5.5 0 8 4.5 8 10 0-5.5 2.5-10 8-10-5.5 0-8-4.5-8-10Z" />
+        <path d="M19 3v4M17 5h4" />
+      </>
+    )
+  }
+  {
+    name === "terminal" && (
+      <>
+        <path d="m5 7 4 5-4 5" />
+        <path d="M11 17h8" />
+      </>
+    )
+  }
+</svg>

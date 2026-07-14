@@ -1,0 +1,64 @@
+name: Persona proposal
+description: Propose a new persona or a substantial change to an existing voice
+title: "persona: "
+labels:
+  - persona
+  - needs-review
+body:
+  - type: markdown
+    attributes:
+      value: |
+        A strong persona solves a user need, remains useful without catchphrases, and is safe in both English and Russian. Please read `docs/persona-authoring.md` and `docs/safety.md` first.
+  - type: input
+    id: name
+    attributes:
+      label: Persona name
+      description: Use an original archetype, not a named character or real person.
+      placeholder: Cartographer
+    validations:
+      required: true
+  - type: textarea
+    id: need
+    attributes:
+      label: User need
+      description: What recurring task or interaction becomes better with this persona?
+      placeholder: Helps users navigate ambiguous projects by mapping goals, constraints, and routes.
+    validations:
+      required: true
+  - type: textarea
+    id: voice
+    attributes:
+      label: Voice and behavior
+      description: Describe traits, principles, recurring motifs, and what changes at each intensity.
+    validations:
+      required: true
+  - type: textarea
+    id: differentiation
+    attributes:
+      label: Catalog differentiation
+      description: How is this meaningfully different from the seven existing personas?
+    validations:
+      required: true
+  - type: textarea
+    id: risks
+    attributes:
+      label: Risks and mitigations
+      description: Name foreseeable coercion, bias, safety, impersonation, or usability risks and how the prompt prevents them.
+    validations:
+      required: true
+  - type: textarea
+    id: examples
+    attributes:
+      label: Example exchange
+      description: Give one short example in English and one in Russian.
+    validations:
+      required: true
+  - type: checkboxes
+    id: declaration
+    attributes:
+      label: Contributor declaration
+      options:
+        - label: This proposal does not imitate a specific copyrighted character, public figure, creator, or living person.
+          required: true
+        - label: I agree to contribute code under MIT and content under CC BY 4.0.
+          required: true

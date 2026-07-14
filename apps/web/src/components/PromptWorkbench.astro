@@ -1,0 +1,271 @@
+---
+import type {
+  PersonaIntensity,
+  PersonaLocale,
+  PersonaManifestV1,
+} from "@ai-agent-personas/core";
+import UiIcon from "@/components/UiIcon.astro";
+import type { CompiledPromptMap } from "@/lib/persona-data";
+import { copy, intensities, personaPath } from "@/lib/site";
+
+interface Props {
+  persona: PersonaManifestV1;
+  locale: PersonaLocale;
+  prompts: CompiledPromptMap;
+  mode?: "preview" | "detail";
+  instance?: string;
+}
+
+const { persona, locale, prompts, mode = "detail", instance = "main" } = Astro.props;
+const t = copy[locale];
+const initialIntensity: PersonaIntensity = "balanced";
+const initialPrompt = prompts[locale][initialIntensity];
+const isPreview = mode === "preview";
+const workbenchId = `${mode}-${instance}-${persona.id}-${locale}`;
+const serializedPrompts = JSON.stringify(prompts)
+  .replaceAll("<", "\\u003c")
+  .replaceAll("\u2028", "\\u2028")
+  .replaceAll("\u2029", "\\u2029");
+---
+
+<section
+  class:list={["prompt-workbench", `prompt-workbench--${mode}`]}
+  aria-label={isPreview ? t.home.promptPreview : t.detail.systemPrompt}
+  data-workbench
+  data-copy-success={t.detail.copied}
+  data-copy-failure={t.detail.copyFailed}
+  data-update-success={t.detail.updated}
+  data-prompt-unavailable={t.detail.promptUnavailable}
+  data-file-name={`${persona.id}-persona-prompt.txt`}
+  data-persona-id={persona.id}
+>
+  <slot name="identity" />
+  <div class="prompt-workbench__controls">
+    <label class="field-control">
+      <span>{t.detail.intensity}</span>
+      <span class="select-wrap">
+        <select data-intensity aria-controls={`${workbenchId}-prompt`}>
+          {
+            intensities.map((intensity) => (
+              <option value={intensity} selected={intensity === initialIntensity}>
+                {t.labels[intensity]}
+              </option>
+            ))
+          }
+        </select>
+        <UiIcon name="chevron" size={18} />
+      </span>
+    </label>
+
+    <label class="field-control">
+      <span>{t.detail.language}</span>
+      <span class="select-wrap">
+        <UiIcon name="globe" size={18} />
+        <select
+          data-locale
+          data-mode={isPreview ? "preview" : "navigate"}
+          data-en-url={personaPath("en", persona.id)}
+          data-ru-url={personaPath("ru", persona.id)}
+          aria-controls={`${workbenchId}-prompt`}
+        >
+          <option value="en" selected={locale === "en"}>{t.labels.english}</option>
+          <option value="ru" selected={locale === "ru"}>{t.labels.russian}</option>
+        </select>
+        <UiIcon name="chevron" size={18} />
+      </span>
+    </label>
+  </div>
+
+  <div class="prompt-workbench__prompt">
+    <span class="eyebrow">{isPreview ? t.home.promptPreview : t.detail.systemPrompt}</span>
+    <pre id={`${workbenchId}-prompt`} tabindex="0"><code data-prompt-output>{initialPrompt}</code></pre>
+  </div>
+
+  <div class="prompt-workbench__actions">
+    <button class="button button--primary" type="button" data-copy-prompt>
+      <UiIcon name="copy" />
+      <span>{t.detail.copy}</span>
+    </button>
+    {
+      !isPreview && (
+        <button class="button button--secondary" type="button" data-download-prompt>
+          <UiIcon name="download" />
+          <span>{t.detail.download}</span>
+        </button>
+      )
+    }
+    <span class="action-status" role="status" aria-live="polite" data-action-status></span>
+  </div>
+
+  <script is:inline type="application/json" data-prompt-data set:html={serializedPrompts}></script>
+</section>
+
+<script>
+  function initializeWorkbench(workbench: HTMLElement) {
+    if (workbench.dataset.ready === "true") return;
+    workbench.dataset.ready = "true";
+
+    const intensity = workbench.querySelector<HTMLSelectElement>("[data-intensity]");
+    const locale = workbench.querySelector<HTMLSelectElement>("[data-locale]");
+    const output = workbench.querySelector<HTMLElement>("[data-prompt-output]");
+    const dataNode = workbench.querySelector<HTMLScriptElement>("[data-prompt-data]");
+    const status = workbench.querySelector<HTMLElement>("[data-action-status]");
+    if (!intensity || !locale || !output || !dataNode || !status) return;
+
+    type RuntimePromptMap = Record<string, Record<string, string>>;
+    const isPromptMap = (value: unknown): value is RuntimePromptMap => {
+      if (typeof value !== "object" || value === null) return false;
+      const candidate = value as Record<string, unknown>;
+      return ["en", "ru"].every((localeKey) => {
+        const localized = candidate[localeKey];
+        if (typeof localized !== "object" || localized === null) return false;
+        const variants = localized as Record<string, unknown>;
+        return ["subtle", "balanced", "immersive"].every(
+          (intensityKey) =>
+            typeof variants[intensityKey] === "string" && variants[intensityKey].length > 0,
+        );
+      });
+    };
+
+    let parsedPrompts: unknown;
+    try {
+      parsedPrompts = JSON.parse(dataNode.textContent || "{}");
+    } catch (error) {
+      parsedPrompts = error;
+    }
+
+    if (!isPromptMap(parsedPrompts)) {
+      const message = workbench.dataset.promptUnavailable ?? "Prompt data is unavailable.";
+      output.textContent = message;
+      status.textContent = message;
+      intensity.disabled = true;
+      locale.disabled = true;
+      workbench
+        .querySelectorAll<HTMLButtonElement>("[data-copy-prompt], [data-download-prompt]")
+        .forEach((button) => {
+          button.disabled = true;
+        });
+      console.error("AI Agent Personas: invalid prompt data", parsedPrompts);
+      return;
+    }
+    const prompts = parsedPrompts;
+
+    const currentPrompt = () => {
+      const prompt = prompts[locale.value]?.[intensity.value];
+      if (!prompt) throw new Error("Prompt selection is outside the compiled prompt matrix.");
+      return prompt;
+    };
+
+    const updatePrompt = (announce = true) => {
+      output.textContent = currentPrompt();
+      const selection = [
+        locale.selectedOptions[0]?.textContent,
+        intensity.selectedOptions[0]?.textContent,
+      ]
+        .filter(Boolean)
+        .join(" · ");
+      status.textContent = announce
+        ? `${workbench.dataset.updateSuccess ?? "Prompt updated"}: ${selection}`
+        : "";
+    };
+
+    intensity.addEventListener("change", () => {
+      updatePrompt();
+      document.dispatchEvent(
+        new CustomEvent("persona:intensity", {
+          detail: {
+            personaId: workbench.dataset.personaId,
+            intensity: intensity.value,
+          },
+        }),
+      );
+    });
+
+    document.addEventListener("persona:intensity", (event) => {
+      const detail = (event as CustomEvent<{ personaId?: string; intensity?: string }>).detail;
+      if (
+        detail.personaId !== workbench.dataset.personaId ||
+        !detail.intensity ||
+        detail.intensity === intensity.value ||
+        !prompts[locale.value]?.[detail.intensity]
+      ) {
+        return;
+      }
+      intensity.value = detail.intensity;
+      updatePrompt();
+    });
+    locale.addEventListener("change", () => {
+      if (locale.dataset.mode === "navigate") {
+        const nextUrl = locale.value === "ru" ? locale.dataset.ruUrl : locale.dataset.enUrl;
+        if (nextUrl) window.location.assign(`${nextUrl}?intensity=${intensity.value}#workbench`);
+        return;
+      }
+      updatePrompt();
+    });
+
+    const requestedIntensity = new URLSearchParams(window.location.search).get("intensity");
+    if (requestedIntensity && prompts[locale.value]?.[requestedIntensity]) {
+      intensity.value = requestedIntensity;
+      updatePrompt(false);
+    }
+
+    const copyText = async (value: string) => {
+      if (navigator.clipboard?.writeText) {
+        try {
+          await navigator.clipboard.writeText(value);
+          return true;
+        } catch {
+          // Continue with the synchronous fallback below.
+        }
+      }
+
+      const textarea = document.createElement("textarea");
+      textarea.value = value;
+      textarea.setAttribute("readonly", "");
+      textarea.style.position = "fixed";
+      textarea.style.left = "-9999px";
+      document.body.append(textarea);
+      textarea.select();
+      const legacyCopy = Reflect.get(document, "execCommand") as
+        | ((commandId: string) => boolean)
+        | undefined;
+      const copied = typeof legacyCopy === "function" && legacyCopy.call(document, "copy");
+      textarea.remove();
+      return copied;
+    };
+
+    workbench.querySelector("[data-copy-prompt]")?.addEventListener("click", async () => {
+      try {
+        const copied = await copyText(currentPrompt());
+        if (copied) {
+          status.textContent = workbench.dataset.copySuccess ?? "Copied";
+          return;
+        }
+      } catch {
+        // Selection fallback below keeps the prompt accessible for manual copy.
+      }
+
+      const range = document.createRange();
+      range.selectNodeContents(output);
+      const selection = window.getSelection();
+      selection?.removeAllRanges();
+      selection?.addRange(range);
+      status.textContent = workbench.dataset.copyFailure ?? "Copy failed";
+    });
+
+    workbench.querySelector("[data-download-prompt]")?.addEventListener("click", () => {
+      const blob = new Blob([currentPrompt()], { type: "text/plain;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = workbench.dataset.fileName ?? "persona-prompt.txt";
+      anchor.click();
+      URL.revokeObjectURL(url);
+    });
+  }
+
+  document.querySelectorAll<HTMLElement>("[data-workbench]").forEach(initializeWorkbench);
+  document.addEventListener("astro:page-load", () => {
+    document.querySelectorAll<HTMLElement>("[data-workbench]").forEach(initializeWorkbench);
+  });
+</script>

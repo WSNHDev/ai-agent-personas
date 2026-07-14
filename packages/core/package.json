@@ -1,0 +1,56 @@
+{
+  "name": "@ai-agent-personas/core",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Typed manifests, validation, and deterministic prompt compilation for AI Agent Personas.",
+  "type": "module",
+  "sideEffects": false,
+  "files": [
+    "dist",
+    "schema"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./schema": "./schema/persona.schema.json",
+    "./catalog.json": "./dist/catalog.json"
+  },
+  "scripts": {
+    "prebuild": "node scripts/clean.mjs",
+    "build": "tsc -p tsconfig.json && node scripts/build-assets.mjs",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.test.json --noEmit",
+    "lint": "tsc -p tsconfig.test.json --noEmit",
+    "validate": "node dist/bin/validate.js"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/WSNHDev/ai-agent-personas.git",
+    "directory": "packages/core"
+  },
+  "homepage": "https://wsnhdev.github.io/ai-agent-personas/",
+  "bugs": {
+    "url": "https://github.com/WSNHDev/ai-agent-personas/issues"
+  },
+  "keywords": [
+    "ai",
+    "agent",
+    "persona",
+    "prompt",
+    "validation"
+  ],
+  "dependencies": {
+    "ajv": "^8.20.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.0",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.7"
+  },
+  "license": "MIT"
+}
