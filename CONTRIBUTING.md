@@ -1,5 +1,7 @@
 # Contributing
 
+> External contributions are temporarily closed. Pull requests, public issue participation, and community Discussions will open only after a monitored confidential conduct-reporting channel is published and tested.
+
 Thank you for helping make AI Agent Personas more useful, distinctive, and safe. Small, focused pull requests are easier to review than mixed code-and-content changes.
 
 ## Before you start

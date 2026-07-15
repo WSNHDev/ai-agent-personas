@@ -36,7 +36,9 @@ This Code of Conduct applies within all community spaces, and also applies when 
 
 ## Enforcement
 
-During private incubation, instances of abusive, harassing, or otherwise unacceptable behavior should be reported directly to a maintainer through the project's existing private collaboration channel. Do not use vulnerability reporting for a general conduct complaint unless the incident also creates a security or privacy risk. A dedicated confidential conduct address is required before the project opens to public participation. All complaints will be reviewed and investigated promptly and fairly.
+A monitored confidential conduct-reporting channel has not yet been established. Until one is published and tested, external contributions and community Discussions remain closed. Security or privacy incidents must use GitHub Private Vulnerability Reporting; that channel is not intended for general conduct complaints.
+
+Once a confidential conduct-reporting channel is published, complaints will be reviewed and investigated promptly and fairly.
 
 All community leaders must respect the privacy and security of the reporter of any incident.
 

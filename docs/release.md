@@ -51,6 +51,8 @@ suite again on the new commit before publishing its GitHub Release.
 
 For the first public release, additionally:
 
+> A public read-only preview may expose the repository, website, and npm package before the community-participation gate opens. In that mode, Issues, Discussions, and external contributions remain closed until a monitored confidential conduct-reporting channel is published and tested. Placeholder text, a public issue, or Private Vulnerability Reporting alone does not satisfy this gate.
+
 1. Confirm the README does not expose private planning notes or credentials.
 2. Confirm every code and content file has a clear license path.
 3. Review git history for secrets and unintended generated artifacts.
