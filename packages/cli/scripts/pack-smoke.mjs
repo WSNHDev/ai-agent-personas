@@ -60,8 +60,12 @@ try {
   const expectedPackedPaths = [
     "dist/bin.js",
     "dist/core/catalog.json",
+    "dist/core/layer-catalog.json",
+    "dist/core/compiled-v2/teacher/en/safety.json",
+    "dist/core/compiled-v2/teacher/en/voice/balanced.json",
     "dist/core/personas/teacher/persona.json",
     "dist/schema/persona.schema.json",
+    "dist/schema/persona-v2.schema.json",
     "README.md",
     "LICENSE",
     "LICENSE-CONTENT.md",
@@ -108,8 +112,12 @@ try {
     "dist/bin.js",
     "dist/core/personas/teacher/persona.json",
     "dist/core/compiled/teacher/en/balanced.json",
+    "dist/core/compiled-v2/teacher/en/safety.json",
+    "dist/core/compiled-v2/teacher/en/voice/balanced.json",
     "dist/core/catalog.json",
+    "dist/core/layer-catalog.json",
     "dist/schema/persona.schema.json",
+    "dist/schema/persona-v2.schema.json",
   ];
   for (const file of requiredFiles) {
     if (!existsSync(resolve(installedPackage, file))) {
@@ -127,7 +135,7 @@ try {
     [
       "--input-type=module",
       "--eval",
-      "import { listPersonas, compilePersona } from 'ai-agent-personas'; const list = listPersonas(); const prompt = compilePersona('teacher', { locale: 'en', intensity: 'balanced', format: 'text' }); if (list.length !== 7 || !prompt.includes('PERSONA: Teacher')) process.exit(1); console.log(list.length);",
+      "import { listPersonas, listPersonaTaskModes, compilePersonaVoice, compilePersonaSafety, compilePersonaTaskMode, compilePersonaLayers, compileLegacyPersona, compilePersona } from 'ai-agent-personas'; const list = listPersonas(); const modes = listPersonaTaskModes('teacher', { locale: 'en' }); const voice = compilePersonaVoice('teacher', { locale: 'en', intensity: 'balanced', format: 'text' }); const safety = compilePersonaSafety('teacher', { locale: 'en' }); const task = compilePersonaTaskMode('teacher', { locale: 'en', taskModeId: modes[0].id }); const layers = compilePersonaLayers('teacher', { locale: 'en' }); const legacy = compileLegacyPersona('teacher', { locale: 'en' }); const alias = compilePersona('teacher', { locale: 'en' }); if (list.length !== 7 || modes.length < 1 || !voice.includes('Teacher') || !safety.includes('Teacher') || !task.includes('Teacher') || layers.taskMode !== null || legacy !== alias) process.exit(1); console.log(list.length);",
     ],
     { cwd: consumerDirectory },
   );
@@ -159,22 +167,47 @@ try {
     }
   }
   if (
+    packageJson.version !== "0.2.0" ||
     packageJson.exports?.["./schema"] !== "./dist/schema/persona.schema.json" ||
-    packageJson.exports?.["./catalog.json"] !== "./dist/core/catalog.json"
+    packageJson.exports?.["./schema/v1"] !== "./dist/schema/persona.schema.json" ||
+    packageJson.exports?.["./schema/v2"] !== "./dist/schema/persona-v2.schema.json" ||
+    packageJson.exports?.["./schema/persona-v1.json"] !==
+      "./dist/schema/persona.schema.json" ||
+    packageJson.exports?.["./schema/persona-v2.json"] !==
+      "./dist/schema/persona-v2.schema.json" ||
+    packageJson.exports?.["./catalog.json"] !== "./dist/core/catalog.json" ||
+    packageJson.exports?.["./layer-catalog.json"] !== "./dist/core/layer-catalog.json" ||
+    packageJson.exports?.["./compiled/*"] !== "./dist/core/compiled/*" ||
+    packageJson.exports?.["./compiled-v2/*"] !== "./dist/core/compiled-v2/*"
   ) {
     throw new Error("Published package is missing schema/catalog subpath exports.");
   }
   const schema = JSON.parse(
     await readFile(resolve(installedPackage, "dist/schema/persona.schema.json"), "utf8"),
   );
+  const schemaV2 = JSON.parse(
+    await readFile(resolve(installedPackage, "dist/schema/persona-v2.schema.json"), "utf8"),
+  );
   const catalog = JSON.parse(
     await readFile(resolve(installedPackage, "dist/core/catalog.json"), "utf8"),
+  );
+  const layerCatalog = JSON.parse(
+    await readFile(resolve(installedPackage, "dist/core/layer-catalog.json"), "utf8"),
   );
   if (schema.$id !== "https://wsnhdev.github.io/ai-agent-personas/schema/persona-v1.json") {
     throw new Error("Packed JSON Schema is invalid or unexpected.");
   }
   if (catalog.schemaVersion !== "1.0.0" || catalog.variants?.length !== 42) {
     throw new Error("Packed catalog is invalid or incomplete.");
+  }
+  if (
+    schemaV2.$id !== "https://wsnhdev.github.io/ai-agent-personas/schema/persona-v2.json" ||
+    layerCatalog.schemaVersion !== "2.0.0" ||
+    layerCatalog.manifestSchemaVersion !== "2.0.0" ||
+    layerCatalog.personas?.length !== 7 ||
+    layerCatalog.entries?.length !== 14
+  ) {
+    throw new Error("Packed v2 schema/layer catalog is invalid or incomplete.");
   }
 
   process.stdout.write(`Pack/install smoke test passed: ${resolvedTarball}\n`);

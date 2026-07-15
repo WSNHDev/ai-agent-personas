@@ -9,12 +9,12 @@ async function source(relativePath) {
   return readFile(path.join(root, relativePath), "utf8");
 }
 
-const [config, copy, home, detail, controls, workbench, rail, catalog, layout, styles, sitemap, robots, schemaRoute] = await Promise.all([
+const [config, copy, personaData, home, detail, workbench, rail, catalog, layout, styles, sitemap, robots, schemaV1Route, schemaV2Route] = await Promise.all([
   source("astro.config.mjs"),
   source("src/lib/site.ts"),
+  source("src/lib/persona-data.ts"),
   source("src/components/HomePage.astro"),
   source("src/components/DetailPage.astro"),
-  source("src/components/PersonaControls.astro"),
   source("src/components/PromptWorkbench.astro"),
   source("src/components/PersonaRail.astro"),
   source("src/components/CatalogPage.astro"),
@@ -23,26 +23,52 @@ const [config, copy, home, detail, controls, workbench, rail, catalog, layout, s
   source("public/sitemap.xml"),
   source("public/robots.txt"),
   source("src/pages/schema/persona-v1.json.ts"),
+  source("src/pages/schema/persona-v2.json.ts"),
 ]);
 
 assert.match(config, /base:\s*["']\/ai-agent-personas["']/);
 assert.match(config, /output:\s*["']static["']/);
 assert.match(copy, /Give your agent a voice worth remembering\./);
-assert.match(copy, /Seven original, safety-aware personas\. Bilingual by design\. Ready for any LLM\./);
+assert.match(copy, /Voice adds character after the answer is solved — never inside solver reasoning\./);
+assert.match(copy, /Voice adds no persona-driven reasoning tokens to the solver stage\./);
+assert.match(copy, /Voice не добавляет persona-driven reasoning-токены на этапе решения\./);
+assert.match(copy, /Voice renders a finished answer; Task methods activate only after an explicit compatibility check\./);
+assert.match(copy, /Voice оформляет готовый ответ, а Task-метод включается только после явной проверки совместимости\./);
+assert.doesNotMatch(`${copy}\n${layout}`, /ready for any LLM|подходит для любой LLM/iu);
 assert.match(home, /npx ai-agent-personas list/);
+assert.match(home, /compileLayerMap/);
+assert.match(home, /Persona stays out of reasoning/);
+assert.match(home, /Персона не участвует в reasoning/);
+assert.match(home, /reasoning-boundary/);
+assert.match(home, /t\.home\.reasoningSteps/);
 assert.match(detail, /data-tabset/);
 assert.match(detail, /PromptWorkbench/);
-assert.match(detail, /PersonaControls/);
+assert.doesNotMatch(detail, /PersonaControls/);
 assert.match(detail, /--locale/);
+assert.match(detail, /commandTargetId=\{cliCommandId\}/);
+assert.match(detail, /--intensity balanced/);
 assert.doesNotMatch(detail, /instance="hero"/);
-assert.match(controls, /persona:intensity/);
+assert.match(personaData, /compilePersonaLayers/);
+assert.match(personaData, /listPersonaTaskModes/);
+assert.match(personaData, /taskModeId: mode\.id/);
 assert.match(workbench, /replaceAll\("<", "\\\\u003c"\)/);
 assert.match(workbench, /Reflect\.get\(document, "execCommand"\)/);
 assert.match(workbench, /range\.selectNodeContents\(output\)/);
-assert.match(workbench, /const isPromptMap/);
+assert.match(workbench, /function isLayerMap/);
+assert.match(workbench, /data-layer="voice"|data-layer=\{layer\}/);
+assert.match(workbench, /data-task-mode-field hidden/);
+assert.match(workbench, /taskModeField\.hidden = activeLayer !== "task"/);
+assert.match(workbench, /intensityField\.hidden = activeLayer !== "voice"/);
+assert.match(workbench, /promptContainer\.hidden = !hasPrompt/);
+assert.match(workbench, /taskEmpty\.hidden = hasPrompt/);
+assert.match(workbench, /anchor\.download = `\$\{workbench\.dataset\.personaId\}\.\$\{locale\.value\}\.\$\{suffix\}\.txt`/);
+assert.doesNotMatch(workbench, /compilePersona/);
 assert.match(workbench, /data-update-success/);
 assert.match(workbench, /data-prompt-unavailable/);
 assert.match(workbench, /selectedOptions/);
+assert.match(workbench, /data-command-target=\{commandTargetId\}/);
+assert.match(workbench, /--mode \$\{taskMode\?\.value \|\| "<task-mode-id>"\}/);
+assert.match(workbench, /command\.textContent = currentCommand\(\)/);
 assert.match(rail, /<ul class="persona-rail"/);
 assert.match(rail, /<li[\s\S]*?data-persona-item[\s\S]*?>\s*<a/);
 assert.doesNotMatch(rail, /role="listitem"/);
@@ -60,10 +86,20 @@ assert.match(styles, /\.persona-rail__entry\[hidden\]/);
 assert.match(styles, /@media \(max-width: 1120px\)[\s\S]*?\.persona-rail__entry/);
 assert.equal((sitemap.match(/<url>/g) ?? []).length, 18);
 assert.match(robots, /Sitemap: https:\/\/wsnhdev\.github\.io\/ai-agent-personas\/sitemap\.xml/);
-assert.match(schemaRoute, /getPersonaSchema/);
-assert.match(schemaRoute, /application\/schema\+json/);
+assert.match(schemaV1Route, /getPersonaSchemaV1/);
+assert.match(schemaV1Route, /application\/schema\+json/);
+assert.match(schemaV2Route, /getPersonaSchemaV2/);
+assert.match(schemaV2Route, /application\/schema\+json/);
 
 const distRoot = path.join(root, "dist");
+const [wizardDetail, englishHome, russianHome] = await Promise.all([
+  source("dist/personas/wizard/index.html"),
+  source("dist/index.html"),
+  source("dist/ru/index.html"),
+]);
+assert.match(wizardDetail, /fallback target/);
+assert.match(englishHome, /persona-driven reasoning tokens to the solver stage/);
+assert.match(russianHome, /persona-driven reasoning-токены на этапе решения/);
 const distFiles = new Set(
   (await readdir(distRoot, { recursive: true })).map((file) => file.replaceAll(path.sep, "/")),
 );

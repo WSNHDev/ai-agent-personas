@@ -1,0 +1,346 @@
+{
+  "schemaVersion": 2,
+  "id": "synthetic-v2-example-do-not-publish",
+  "runKind": "protocol-validation",
+  "commit": "0000000000000000000000000000000000000000",
+  "persona": {
+    "id": "detective",
+    "version": "2.0.0",
+    "manifestSchemaVersion": "2.0.0",
+    "locale": "en",
+    "intensity": "balanced",
+    "taskModeId": "detective-root-cause"
+  },
+  "runtime": {
+    "surface": "synthetic-runtime",
+    "model": "synthetic-model",
+    "modelSettingsSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "toolPolicySha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "rendererPolicySha256": "ac92aa50baf7ddd7caaf401d651a7ea03405c078510b6cbcdf3b67e715cda40d",
+    "rendererToolPolicySha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+    "timingMode": "counterbalanced-sequential",
+    "seed": 42,
+    "armOrder": [
+      "control",
+      "length-matched-neutral",
+      "legacy-global",
+      "control-voice",
+      "task-voice"
+    ]
+  },
+  "protocol": {
+    "protocolArtifactSha256": "75d9fba83e32b1c383d2962889b1a5f2f7c681ce66de4e4faaf8e71f6db214a8",
+    "compatibilityMatrixSha256": "17dbed264b9409068999a1b1ffdc14f1c95d2bd56e4578da5d0ed7ccab1e09e5",
+    "workloadCatalogSha256": "5ebfd31fd19156df244f6637799bb31d885dc9c53df939db35a3a16ae6dbea75",
+    "lengthMatching": {
+      "method": "deterministic neutral prose matched by whitespace word count",
+      "targetArm": "legacy-global",
+      "toleranceWords": 0,
+      "planSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+    },
+    "nonInferiorityMargin": 3,
+    "taskQualityMinimumDelta": 1,
+    "confidence": {
+      "method": "one-sided-workload-bootstrap",
+      "confidenceLevel": 0.95,
+      "seed": 20260715,
+      "samples": 10000,
+      "minimumWorkloadPairs": 8,
+      "minimumCompatibleTaskPairs": 4,
+      "minimumRatersPerWorkload": 8,
+      "minimumTotalRaters": 64,
+      "samplePlanSha256": "b49df69a2c6b0450b50d4751853d0eeb5e0186eeb628e7a1dd7a20232fda277c"
+    },
+    "judge": {
+      "identity": "synthetic-shared-judge",
+      "version": "1.0.0",
+      "configurationSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+      "rubricSha256": "2222222222222222222222222222222222222222222222222222222222222222",
+      "seed": 7,
+      "judgePayloadSha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "evaluatorEvidenceSha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+    },
+    "tokenBudgetRatio": 1.25,
+    "timeBudgetRatio": 1.25,
+    "taskTokenBudgetRatio": 1.1,
+    "taskTimeBudgetRatio": 1.1,
+    "criticalSafetyThreshold": 0,
+    "ux": {
+      "humanRated": true,
+      "armLabelsBlinded": true,
+      "presentationRandomized": true,
+      "randomizationMappingSha256": "3333333333333333333333333333333333333333333333333333333333333333",
+      "raterAttestationSha256": "4444444444444444444444444444444444444444444444444444444444444444",
+      "dimensions": [
+        "pairwise-preference",
+        "persona-identification",
+        "clarity",
+        "trust",
+        "perceived-effort",
+        "intent-to-reuse"
+      ],
+      "preferenceScoreMinimum": 0.6,
+      "voiceRecognitionRateMinimum": 0.6,
+      "voiceRecognitionLiftMinimum": 0.3,
+      "secondaryNonInferiorityMargin": 0.5
+    }
+  },
+  "workloads": [
+    {
+      "id": "synthetic-aligned-a",
+      "family": "debugging",
+      "fixtureId": "detective-investigation-a",
+      "fixtureSha256": "bc0ee9ee2ec4a345b43e03840d2e9ad51f8c4ecbce89d67cfd602249005a823e",
+      "alignment": "persona-aligned",
+      "taskModeCompatible": true,
+      "arms": {
+        "control": {
+          "selection": { "solver": "neutral", "renderer": "neutral", "taskModeId": null },
+          "solver": {
+            "artifactSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+            "promptSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+            "promptBytes": 240,
+            "promptWords": 40,
+            "modelRequests": 1,
+            "tokens": { "input": 100, "cachedInput": 0, "reasoning": 0, "output": 20 },
+            "elapsedSeconds": 10
+          },
+          "renderer": null,
+          "taskQuality": { "score": 90, "maximum": 100, "judge": "hybrid", "judgePayloadSha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff" },
+          "safety": { "criticalFailures": [], "nonCriticalFailures": 0 },
+          "excludedReason": null
+        },
+        "length-matched-neutral": {
+          "selection": { "solver": "length-matched-neutral", "renderer": "neutral", "taskModeId": null },
+          "solver": {
+            "artifactSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "promptSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "promptBytes": 1200,
+            "promptWords": 200,
+            "modelRequests": 1,
+            "tokens": { "input": 105, "cachedInput": 0, "reasoning": 0, "output": 20 },
+            "elapsedSeconds": 10
+          },
+          "renderer": null,
+          "taskQuality": { "score": 90, "maximum": 100, "judge": "hybrid", "judgePayloadSha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff" },
+          "safety": { "criticalFailures": [], "nonCriticalFailures": 0 },
+          "excludedReason": null
+        },
+        "legacy-global": {
+          "selection": { "solver": "legacy", "renderer": "neutral", "taskModeId": null },
+          "solver": {
+            "artifactSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+            "promptSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+            "promptBytes": 1200,
+            "promptWords": 200,
+            "modelRequests": 1,
+            "tokens": { "input": 140, "cachedInput": 0, "reasoning": 0, "output": 20 },
+            "elapsedSeconds": 10
+          },
+          "renderer": null,
+          "taskQuality": { "score": 90, "maximum": 100, "judge": "hybrid", "judgePayloadSha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff" },
+          "safety": { "criticalFailures": [], "nonCriticalFailures": 0 },
+          "excludedReason": null
+        },
+        "control-voice": {
+          "selection": { "solver": "neutral", "renderer": "voice", "taskModeId": null },
+          "solver": {
+            "artifactSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+            "promptSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+            "promptBytes": 240,
+            "promptWords": 40,
+            "modelRequests": 1,
+            "tokens": { "input": 100, "cachedInput": 0, "reasoning": 0, "output": 20 },
+            "elapsedSeconds": 10
+          },
+          "renderer": {
+            "artifactSha256": "5555555555555555555555555555555555555555555555555555555555555555",
+            "promptSha256": "5555555555555555555555555555555555555555555555555555555555555555",
+            "promptBytes": 960,
+            "promptWords": 160,
+            "modelRequests": 1,
+            "tokens": { "input": 5, "cachedInput": 0, "reasoning": 0, "output": 20 },
+            "elapsedSeconds": 1,
+            "inputArtifactSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+            "rendererPolicySha256": "ac92aa50baf7ddd7caaf401d651a7ea03405c078510b6cbcdf3b67e715cda40d",
+            "toolsEnabled": false,
+            "toolPolicySha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+          },
+          "taskQuality": { "score": 91, "maximum": 100, "judge": "hybrid", "judgePayloadSha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff" },
+          "safety": { "criticalFailures": [], "nonCriticalFailures": 0 },
+          "excludedReason": null
+        },
+        "task-voice": {
+          "selection": { "solver": "task", "renderer": "voice", "taskModeId": "detective-root-cause" },
+          "solver": {
+            "artifactSha256": "6666666666666666666666666666666666666666666666666666666666666666",
+            "promptSha256": "6666666666666666666666666666666666666666666666666666666666666666",
+            "promptBytes": 720,
+            "promptWords": 120,
+            "modelRequests": 1,
+            "tokens": { "input": 110, "cachedInput": 0, "reasoning": 0, "output": 20 },
+            "elapsedSeconds": 10
+          },
+          "renderer": {
+            "artifactSha256": "5555555555555555555555555555555555555555555555555555555555555555",
+            "promptSha256": "5555555555555555555555555555555555555555555555555555555555555555",
+            "promptBytes": 960,
+            "promptWords": 160,
+            "modelRequests": 1,
+            "tokens": { "input": 5, "cachedInput": 0, "reasoning": 0, "output": 20 },
+            "elapsedSeconds": 1,
+            "inputArtifactSha256": "6666666666666666666666666666666666666666666666666666666666666666",
+            "rendererPolicySha256": "ac92aa50baf7ddd7caaf401d651a7ea03405c078510b6cbcdf3b67e715cda40d",
+            "toolsEnabled": false,
+            "toolPolicySha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+          },
+          "taskQuality": { "score": 92, "maximum": 100, "judge": "hybrid", "judgePayloadSha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff" },
+          "safety": { "criticalFailures": [], "nonCriticalFailures": 0 },
+          "excludedReason": null
+        }
+      }
+    },
+    {
+      "id": "synthetic-neutral-a",
+      "family": "strict-extraction",
+      "fixtureId": "detective-extraction-a",
+      "fixtureSha256": "9aa47d1320ea21571fdc4e7d97955941c06614d05420b322fcc59c14033506b9",
+      "alignment": "persona-neutral",
+      "taskModeCompatible": false,
+      "arms": {
+        "control": {
+          "selection": { "solver": "neutral", "renderer": "neutral", "taskModeId": null },
+          "solver": {
+            "artifactSha256": "7777777777777777777777777777777777777777777777777777777777777777",
+            "promptSha256": "7777777777777777777777777777777777777777777777777777777777777777",
+            "promptBytes": 240,
+            "promptWords": 40,
+            "modelRequests": 1,
+            "tokens": { "input": 100, "cachedInput": 0, "reasoning": 0, "output": 20 },
+            "elapsedSeconds": 10
+          },
+          "renderer": null,
+          "taskQuality": { "score": 90, "maximum": 100, "judge": "hybrid", "judgePayloadSha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff" },
+          "safety": { "criticalFailures": [], "nonCriticalFailures": 0 },
+          "excludedReason": null
+        },
+        "length-matched-neutral": {
+          "selection": { "solver": "length-matched-neutral", "renderer": "neutral", "taskModeId": null },
+          "solver": {
+            "artifactSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "promptSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "promptBytes": 1200,
+            "promptWords": 200,
+            "modelRequests": 1,
+            "tokens": { "input": 105, "cachedInput": 0, "reasoning": 0, "output": 20 },
+            "elapsedSeconds": 10
+          },
+          "renderer": null,
+          "taskQuality": { "score": 90, "maximum": 100, "judge": "hybrid", "judgePayloadSha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff" },
+          "safety": { "criticalFailures": [], "nonCriticalFailures": 0 },
+          "excludedReason": null
+        },
+        "legacy-global": {
+          "selection": { "solver": "legacy", "renderer": "neutral", "taskModeId": null },
+          "solver": {
+            "artifactSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+            "promptSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+            "promptBytes": 1200,
+            "promptWords": 200,
+            "modelRequests": 1,
+            "tokens": { "input": 140, "cachedInput": 0, "reasoning": 0, "output": 20 },
+            "elapsedSeconds": 10
+          },
+          "renderer": null,
+          "taskQuality": { "score": 90, "maximum": 100, "judge": "hybrid", "judgePayloadSha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff" },
+          "safety": { "criticalFailures": [], "nonCriticalFailures": 0 },
+          "excludedReason": null
+        },
+        "control-voice": {
+          "selection": { "solver": "neutral", "renderer": "voice", "taskModeId": null },
+          "solver": {
+            "artifactSha256": "7777777777777777777777777777777777777777777777777777777777777777",
+            "promptSha256": "7777777777777777777777777777777777777777777777777777777777777777",
+            "promptBytes": 240,
+            "promptWords": 40,
+            "modelRequests": 1,
+            "tokens": { "input": 100, "cachedInput": 0, "reasoning": 0, "output": 20 },
+            "elapsedSeconds": 10
+          },
+          "renderer": {
+            "artifactSha256": "5555555555555555555555555555555555555555555555555555555555555555",
+            "promptSha256": "5555555555555555555555555555555555555555555555555555555555555555",
+            "promptBytes": 960,
+            "promptWords": 160,
+            "modelRequests": 1,
+            "tokens": { "input": 5, "cachedInput": 0, "reasoning": 0, "output": 20 },
+            "elapsedSeconds": 1,
+            "inputArtifactSha256": "7777777777777777777777777777777777777777777777777777777777777777",
+            "rendererPolicySha256": "ac92aa50baf7ddd7caaf401d651a7ea03405c078510b6cbcdf3b67e715cda40d",
+            "toolsEnabled": false,
+            "toolPolicySha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+          },
+          "taskQuality": { "score": 91, "maximum": 100, "judge": "hybrid", "judgePayloadSha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff" },
+          "safety": { "criticalFailures": [], "nonCriticalFailures": 0 },
+          "excludedReason": null
+        },
+        "task-voice": {
+          "selection": { "solver": "task", "renderer": "voice", "taskModeId": "detective-root-cause" },
+          "solver": {
+            "artifactSha256": "6666666666666666666666666666666666666666666666666666666666666666",
+            "promptSha256": "6666666666666666666666666666666666666666666666666666666666666666",
+            "promptBytes": 720,
+            "promptWords": 120,
+            "modelRequests": 1,
+            "tokens": { "input": 110, "cachedInput": 0, "reasoning": 0, "output": 20 },
+            "elapsedSeconds": 10
+          },
+          "renderer": {
+            "artifactSha256": "5555555555555555555555555555555555555555555555555555555555555555",
+            "promptSha256": "5555555555555555555555555555555555555555555555555555555555555555",
+            "promptBytes": 960,
+            "promptWords": 160,
+            "modelRequests": 1,
+            "tokens": { "input": 5, "cachedInput": 0, "reasoning": 0, "output": 20 },
+            "elapsedSeconds": 1,
+            "inputArtifactSha256": "6666666666666666666666666666666666666666666666666666666666666666",
+            "rendererPolicySha256": "ac92aa50baf7ddd7caaf401d651a7ea03405c078510b6cbcdf3b67e715cda40d",
+            "toolsEnabled": false,
+            "toolPolicySha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+          },
+          "taskQuality": { "score": 92, "maximum": 100, "judge": "hybrid", "judgePayloadSha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff" },
+          "safety": { "criticalFailures": [], "nonCriticalFailures": 0 },
+          "excludedReason": "The preregistered Task mode is not compatible with this workload."
+        }
+      }
+    }
+  ],
+  "ux": [
+    {
+      "workloadId": "synthetic-aligned-a",
+      "raters": 8,
+      "preference": { "control": 1, "voice": 5, "tie": 2 },
+      "personaIdentification": {
+        "control": { "correct": 0, "incorrect": 7, "unsure": 1 },
+        "voice": { "correct": 8, "incorrect": 0, "unsure": 0 }
+      },
+      "clarity": { "control": 5.8, "voice": 6.2 },
+      "trust": { "control": 5.9, "voice": 6.0 },
+      "perceivedEffort": { "control": 3.1, "voice": 2.8 },
+      "intentToReuse": { "control": 5.4, "voice": 6.1 }
+    },
+    {
+      "workloadId": "synthetic-neutral-a",
+      "raters": 8,
+      "preference": { "control": 1, "voice": 5, "tie": 2 },
+      "personaIdentification": {
+        "control": { "correct": 0, "incorrect": 7, "unsure": 1 },
+        "voice": { "correct": 8, "incorrect": 0, "unsure": 0 }
+      },
+      "clarity": { "control": 5.8, "voice": 6.2 },
+      "trust": { "control": 5.9, "voice": 6.0 },
+      "perceivedEffort": { "control": 3.1, "voice": 2.8 },
+      "intentToReuse": { "control": 5.4, "voice": 6.1 }
+    }
+  ]
+}

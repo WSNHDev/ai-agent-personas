@@ -13,7 +13,7 @@ import {
   PersonaValidationError,
 } from "./errors.js";
 import type {
-  PersonaManifestV1,
+  PersonaManifest,
   PersonaPathValidationFailure,
   PersonaPathValidationReport,
   PersonaSourceOptions,
@@ -127,7 +127,7 @@ function parseJsonFile(file: string): unknown {
   }
 }
 
-export function loadPersonaFile(file: string): PersonaManifestV1 {
+export function loadPersonaFile(file: string): PersonaManifest {
   const absolute = isAbsolute(file) ? file : resolve(file);
   const manifest = validatePersonaManifest(parseJsonFile(absolute), absolute);
   const directoryId = dirname(absolute).split(/[\\/]/u).at(-1);
@@ -145,7 +145,7 @@ export function loadPersonaFile(file: string): PersonaManifestV1 {
   return manifest;
 }
 
-export function getPersona(id: string, options: PersonaSourceOptions = {}): PersonaManifestV1 {
+export function getPersona(id: string, options: PersonaSourceOptions = {}): PersonaManifest {
   if (!PERSONA_ID_PATTERN.test(id)) {
     throw new PersonaNotFoundError(id);
   }
@@ -170,12 +170,18 @@ export function listPersonas(options: PersonaSourceOptions = {}): readonly Perso
       tags: [...manifest.tags],
       color: manifest.color,
       name: {
-        en: manifest.locales.en.name,
-        ru: manifest.locales.ru.name,
+        en: manifest.schemaVersion === "1.0.0" ? manifest.locales.en.name : manifest.display.name.en,
+        ru: manifest.schemaVersion === "1.0.0" ? manifest.locales.ru.name : manifest.display.name.ru,
       },
       summary: {
-        en: manifest.locales.en.summary,
-        ru: manifest.locales.ru.summary,
+        en:
+          manifest.schemaVersion === "1.0.0"
+            ? manifest.locales.en.summary
+            : manifest.display.summary.en,
+        ru:
+          manifest.schemaVersion === "1.0.0"
+            ? manifest.locales.ru.summary
+            : manifest.display.summary.ru,
       },
       safetyRating: manifest.safety.rating,
     }));

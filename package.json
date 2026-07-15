@@ -20,6 +20,8 @@
     "eval": "node scripts/promptfoo.mjs eval -c evals/promptfooconfig.yaml",
     "eval:validate": "node scripts/promptfoo.mjs validate config -c evals/promptfooconfig.yaml",
     "eval:view": "node scripts/promptfoo.mjs view",
+    "benchmark:persona-overhead": "node scripts/persona-overhead-report.mjs",
+    "benchmark:persona-layers": "node scripts/persona-layer-benchmark-report.mjs",
     "test:scripts": "node --test scripts/*.test.mjs",
     "release:verify": "node scripts/verify-release.mjs"
   },

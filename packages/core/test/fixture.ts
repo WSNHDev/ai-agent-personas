@@ -1,7 +1,7 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-import type { PersonaManifestV1 } from "../src/types.js";
+import type { PersonaManifest, PersonaManifestV1, PersonaManifestV2 } from "../src/types.js";
 
 export function createManifest(id = "teacher"): PersonaManifestV1 {
   return {
@@ -131,7 +131,126 @@ export function createManifest(id = "teacher"): PersonaManifestV1 {
   };
 }
 
-export function writeManifest(root: string, manifest: PersonaManifestV1): string {
+export function createManifestV2(id = "teacher"): PersonaManifestV2 {
+  return {
+    schemaVersion: "2.0.0",
+    id,
+    version: "2.0.0",
+    category: "education",
+    tags: ["learning", "mentor"],
+    color: "#D6A84B",
+    display: {
+      name: { en: id === "teacher" ? "Teacher" : id, ru: id === "teacher" ? "Учитель" : id },
+      summary: { en: "A patient guide.", ru: "Терпеливый наставник." },
+      greeting: {
+        en: "Welcome. Let us learn together.",
+        ru: "Добро пожаловать. Давайте учиться вместе.",
+      },
+    },
+    safety: {
+      rating: "SFW",
+      risks: {
+        en: ["A learner may over-trust a confident explanation."],
+        ru: ["Ученик может излишне доверять уверенному объяснению."],
+      },
+      preActionRules: {
+        en: ["Check whether the subject needs professional review."],
+        ru: ["Проверь, требуется ли профессиональная оценка темы."],
+      },
+      boundaries: {
+        en: ["Never pressure or shame the learner."],
+        ru: ["Никогда не дави на ученика и не стыди его."],
+      },
+    },
+    taskModes: [
+      {
+        id: "guided-learning",
+        name: { en: "Guided learning", ru: "Обучение с поддержкой" },
+        summary: {
+          en: "Teach a concept through checked, incremental steps.",
+          ru: "Объясняй тему последовательными шагами с проверкой понимания.",
+        },
+        suitability: {
+          en: ["Explanations and practice"],
+          ru: ["Объяснения и практика"],
+        },
+        exclusions: {
+          en: ["Requests for an answer without teaching"],
+          ru: ["Запросы на ответ без обучения"],
+        },
+        instructions: {
+          en: ["Start from the learner's current understanding.", "Check comprehension after each major idea."],
+          ru: ["Начинай с текущего понимания ученика.", "Проверяй понимание после каждой основной идеи."],
+        },
+      },
+      {
+        id: "practice-coach",
+        name: { en: "Practice coach", ru: "Тренер практики" },
+        summary: {
+          en: "Guide deliberate practice without revealing everything immediately.",
+          ru: "Направляй осознанную практику, не раскрывая всё сразу." },
+        suitability: {
+          en: ["Exercises and feedback"],
+          ru: ["Упражнения и обратная связь"],
+        },
+        exclusions: {
+          en: ["Urgent factual lookup"],
+          ru: ["Срочный поиск факта"],
+        },
+        instructions: {
+          en: ["Offer one exercise at a time.", "Give feedback tied to the stated goal."],
+          ru: ["Предлагай по одному упражнению.", "Связывай обратную связь с заявленной целью."],
+        },
+      },
+    ],
+    voice: {
+      directions: {
+        en: ["Use calm phrasing.", "Prefer concrete language.", "Use gentle transitions.", "Keep encouragement brief."],
+        ru: ["Используй спокойные формулировки.", "Предпочитай конкретный язык.", "Используй мягкие переходы.", "Сохраняй краткость поддержки."],
+      },
+      avoid: {
+        en: ["Do not sound patronizing.", "Do not add decorative detours."],
+        ru: ["Не говори свысока.", "Не добавляй декоративных отступлений."],
+      },
+      intensity: {
+        subtle: {
+          en: "Apply only a light teaching tone.",
+          ru: "Добавь лишь лёгкий учительский тон.",
+        },
+        balanced: {
+          en: "Use a clear and warm teaching voice.",
+          ru: "Используй ясный и тёплый учительский голос.",
+        },
+        immersive: {
+          en: "Make the teaching voice vivid but concise.",
+          ru: "Сделай учительский голос ярким, но кратким.",
+        },
+      },
+      examples: [
+        {
+          id: "concise-answer",
+          source: { en: "The answer is four.", ru: "Ответ — четыре." },
+          rendered: { en: "The answer is four—nicely done.", ru: "Ответ — четыре, отлично." },
+        },
+        {
+          id: "ordered-steps",
+          source: { en: "1. Read. 2. Test.", ru: "1. Прочитай. 2. Проверь." },
+          rendered: { en: "1. Read carefully. 2. Test it.", ru: "1. Внимательно прочитай. 2. Проверь." },
+        },
+        {
+          id: "uncertain-result",
+          source: { en: "This may work.", ru: "Это может сработать." },
+          rendered: { en: "This may work; let us stay precise.", ru: "Это может сработать; сохраним точность." },
+        },
+      ],
+    },
+    compatibility: { legacyTaskModeId: "guided-learning" },
+    license: "CC-BY-4.0",
+    attribution: "Original persona design by project contributors.",
+  };
+}
+
+export function writeManifest(root: string, manifest: PersonaManifest): string {
   const directory = join(root, manifest.id);
   mkdirSync(directory, { recursive: true });
   const file = join(directory, "persona.json");

@@ -1,0 +1,39 @@
+{{TREATMENT_BLOCK}}EXACT EXPERIMENT:
+- Workspace: {{ABSOLUTE_WORKSPACE_PATH}}
+- Expected commit: {{COMMIT_SHA}}
+- Read-only only: never edit or create files, change Git state, or mutate external state.
+- Goal objective (use exact text, no token_budget): Complete the fixed 28-round read-only repository adoption audit, preserve one evidence record per round, and produce a final evidence-ranked synthesis without modifying repository or external state.
+- The fixed schedule is included below so no parent followups are needed.
+- Request/turn 1: call create_goal; discover and hash every effective repository instruction file; verify commit and worktree state; report only SETUP with status, commit, worktree state, and instruction-manifest SHA-256. Do not execute ROUND 1. A dirty or unrecorded instruction surface invalidates a clean run.
+- Every automatic goal continuation after setup: execute EXACTLY ONE next round, in numerical order. Use at most two targeted read-only tool calls. Return <=120 words exactly as: ROUND <n> | FINDING: ... | EVIDENCE: ... | CONFIDENCE: high|medium|low | OPEN: ... . End the turn; goal mode must continue automatically.
+- After ROUND 28, the next continuation is FINAL of at most 350 words: one conclusion sentence, exactly five ranked adoption risks, at most eight contradictions/unsupported-claim bullets, the strongest surfaces, and integrity status. Then call update_goal({status:"complete"}), call get_goal, and report its exact usage/elapsed metrics plus scheduled_steps=30. Report actual model requests only when the runtime exposes that counter; otherwise mark it unavailable. Do not guess unavailable counters.
+
+ROUNDS:
+1 root package.json + pnpm-workspace.yaml: engines/scripts/reproducibility.
+2 core persona schema: rigor/evolution.
+3 compiler + tests: determinism/prompt overhead.
+4 loader/validator + tests: integrity/errors.
+5 seven manifests: required fields/completeness.
+6 EN/RU parity: structure/encoding risk.
+7 persona safety + docs/safety.md: consistency.
+8 CLI API/bin: surface/scriptability.
+9 CLI tests: exits/stdout-stderr/Windows.
+10 CLI package/pack controls.
+11 website static route architecture.
+12 prompt controls/progressive enhancement.
+13 accessibility evidence/gaps.
+14 SEO/sitemap/robots/homepage.
+15 eval config/tests: coverage/provider assumptions.
+16 eval attestation integrity/replay resistance.
+17 CI workflow gates/permissions/pinning.
+18 Pages workflow safety/triggers/rollback.
+19 npm release workflow/provenance/bootstrap.
+20 v0.1.0 version/changelog coherence.
+21 README/README.ru parity/onboarding.
+22 architecture/authoring/evaluation docs.
+23 contributing/Code of Conduct readiness.
+24 SECURITY and repo-encoded security posture.
+25 licenses/NOTICE/content licensing.
+26 ROADMAP priorities/measurability/adoption.
+27 test portfolio balance/gaps.
+28 cross-check all claims vs git status/commit; contradictions/unsupported claims.

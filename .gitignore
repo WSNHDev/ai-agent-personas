@@ -9,6 +9,10 @@ promptfoo-output/
 eval-results.html
 eval-results.json
 eval-attestation.json
+benchmarks/persona-overhead/local-results/
+benchmarks/persona-overhead/artifacts/
+benchmarks/persona-overhead/results/
+.omx/
 *.log
 .DS_Store
 Thumbs.db

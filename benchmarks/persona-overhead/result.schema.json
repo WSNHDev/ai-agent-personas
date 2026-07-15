@@ -1,0 +1,400 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://wsnhdev.github.io/ai-agent-personas/schema/persona-overhead-result-v1.json",
+  "title": "Persona overhead paired result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "id",
+    "runKind",
+    "commit",
+    "workload",
+    "runtime",
+    "persona",
+    "arms",
+    "quality"
+  ],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "id": { "$ref": "#/$defs/id" },
+    "runKind": {
+      "enum": ["protocol-validation", "pilot", "screening", "confirmatory"]
+    },
+    "commit": { "type": "string", "pattern": "^[a-f0-9]{40}$" },
+    "workload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "scheduledSteps",
+        "scheduledStepIds",
+        "controlPayloadSha256",
+        "personaPayloadSha256",
+        "effectiveInstructionsSha256",
+        "roundArtifactsRetained"
+      ],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "scheduledSteps": { "type": "integer", "minimum": 1 },
+        "scheduledStepIds": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/id" }
+        },
+        "controlPayloadSha256": { "$ref": "#/$defs/sha256" },
+        "personaPayloadSha256": { "$ref": "#/$defs/sha256" },
+        "effectiveInstructionsSha256": { "$ref": "#/$defs/sha256" },
+        "roundArtifactsRetained": { "type": "boolean" }
+      }
+    },
+    "runtime": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "surface",
+        "model",
+        "modelConfigurationSha256",
+        "toolPolicySha256",
+        "sameConfigurationAcrossArms",
+        "timingMode",
+        "launchOrder",
+        "actualModelRequestsAvailable"
+      ],
+      "properties": {
+        "surface": { "type": "string", "minLength": 1 },
+        "model": { "type": "string", "minLength": 1 },
+        "modelConfigurationSha256": { "$ref": "#/$defs/sha256" },
+        "toolPolicySha256": { "$ref": "#/$defs/sha256" },
+        "sameConfigurationAcrossArms": { "type": "boolean" },
+        "timingMode": {
+          "enum": ["concurrent-shared-resources", "counterbalanced-sequential"]
+        },
+        "launchOrder": {
+          "enum": ["simultaneous", "control-first", "persona-first"]
+        },
+        "actualModelRequestsAvailable": { "type": "boolean" }
+      }
+    },
+    "persona": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "locale",
+        "intensity",
+        "format",
+        "compiledPromptSha256",
+        "compiledPromptBytes"
+      ],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "locale": { "enum": ["en", "ru"] },
+        "intensity": { "enum": ["subtle", "balanced", "immersive"] },
+        "format": { "enum": ["text", "markdown", "json"] },
+        "compiledPromptSha256": { "$ref": "#/$defs/sha256" },
+        "compiledPromptBytes": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "arms": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["control", "persona"],
+      "properties": {
+        "control": { "$ref": "#/$defs/arm" },
+        "persona": { "$ref": "#/$defs/arm" }
+      }
+    },
+    "quality": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "labelBlinded",
+        "rubricMaximum",
+        "rubric",
+        "nonInferiorityMargin",
+        "evaluatorModel",
+        "evaluatorPayloadSha256",
+        "artifactSha256",
+        "armMappingSha256"
+      ],
+      "properties": {
+        "labelBlinded": { "type": "boolean" },
+        "rubricMaximum": { "const": 100 },
+        "rubric": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "maximum"],
+            "properties": {
+              "id": { "$ref": "#/$defs/id" },
+              "maximum": { "type": "integer", "minimum": 1 }
+            }
+          }
+        },
+        "nonInferiorityMargin": { "type": "number", "minimum": 0, "maximum": 100 },
+        "evaluatorModel": {
+          "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }]
+        },
+        "evaluatorPayloadSha256": {
+          "anyOf": [{ "$ref": "#/$defs/sha256" }, { "type": "null" }]
+        },
+        "artifactSha256": {
+          "anyOf": [{ "$ref": "#/$defs/sha256" }, { "type": "null" }]
+        },
+        "armMappingSha256": {
+          "anyOf": [{ "$ref": "#/$defs/sha256" }, { "type": "null" }]
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "runKind": { "const": "confirmatory" } },
+        "required": ["runKind"]
+      },
+      "then": {
+        "properties": {
+          "workload": {
+            "type": "object",
+            "properties": { "roundArtifactsRetained": { "const": true } }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "workload": {
+            "type": "object",
+            "properties": { "roundArtifactsRetained": { "const": true } },
+            "required": ["roundArtifactsRetained"]
+          }
+        },
+        "required": ["workload"]
+      },
+      "then": {
+        "properties": {
+          "arms": {
+            "type": "object",
+            "properties": {
+              "control": {
+                "type": "object",
+                "properties": { "roundArtifactSha256": { "$ref": "#/$defs/sha256" } }
+              },
+              "persona": {
+                "type": "object",
+                "properties": { "roundArtifactSha256": { "$ref": "#/$defs/sha256" } }
+              }
+            }
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "arms": {
+            "type": "object",
+            "properties": {
+              "control": {
+                "type": "object",
+                "properties": { "roundArtifactSha256": { "type": "null" } }
+              },
+              "persona": {
+                "type": "object",
+                "properties": { "roundArtifactSha256": { "type": "null" } }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "runtime": {
+            "type": "object",
+            "properties": { "actualModelRequestsAvailable": { "const": true } },
+            "required": ["actualModelRequestsAvailable"]
+          }
+        },
+        "required": ["runtime"]
+      },
+      "then": {
+        "properties": {
+          "arms": {
+            "type": "object",
+            "properties": {
+              "control": {
+                "type": "object",
+                "properties": { "modelRequests": { "type": "integer", "minimum": 0 } }
+              },
+              "persona": {
+                "type": "object",
+                "properties": { "modelRequests": { "type": "integer", "minimum": 0 } }
+              }
+            }
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "arms": {
+            "type": "object",
+            "properties": {
+              "control": {
+                "type": "object",
+                "properties": { "modelRequests": { "type": "null" } }
+              },
+              "persona": {
+                "type": "object",
+                "properties": { "modelRequests": { "type": "null" } }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "anyOf": [
+          {
+            "properties": {
+              "arms": {
+                "type": "object",
+                "properties": {
+                  "control": {
+                    "type": "object",
+                    "properties": { "taskQualityScore": { "type": "number" } },
+                    "required": ["taskQualityScore"]
+                  }
+                }
+              }
+            }
+          },
+          {
+            "properties": {
+              "arms": {
+                "type": "object",
+                "properties": {
+                  "persona": {
+                    "type": "object",
+                    "properties": { "taskQualityScore": { "type": "number" } },
+                    "required": ["taskQualityScore"]
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "then": {
+        "properties": {
+          "quality": {
+            "type": "object",
+            "properties": {
+              "evaluatorModel": { "type": "string", "minLength": 1 },
+              "evaluatorPayloadSha256": { "$ref": "#/$defs/sha256" },
+              "artifactSha256": { "$ref": "#/$defs/sha256" },
+              "armMappingSha256": { "$ref": "#/$defs/sha256" }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]*$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "arm": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "executedStepIds",
+        "roundArtifactSha256",
+        "tokens",
+        "elapsedSeconds",
+        "modelRequests",
+        "taskQualityScore",
+        "taskQualityBreakdown",
+        "processErrors",
+        "selfCorrections",
+        "failureReason"
+      ],
+      "properties": {
+        "status": { "enum": ["complete", "failed", "blocked", "excluded"] },
+        "executedStepIds": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/id" }
+        },
+        "roundArtifactSha256": {
+          "anyOf": [{ "$ref": "#/$defs/sha256" }, { "type": "null" }]
+        },
+        "tokens": {
+          "anyOf": [{ "type": "number", "exclusiveMinimum": 0 }, { "type": "null" }]
+        },
+        "elapsedSeconds": {
+          "anyOf": [{ "type": "number", "exclusiveMinimum": 0 }, { "type": "null" }]
+        },
+        "modelRequests": {
+          "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }]
+        },
+        "taskQualityScore": {
+          "anyOf": [
+            { "type": "number", "minimum": 0, "maximum": 100 },
+            { "type": "null" }
+          ]
+        },
+        "taskQualityBreakdown": {
+          "anyOf": [
+            {
+              "type": "object",
+              "additionalProperties": { "type": "number", "minimum": 0 }
+            },
+            { "type": "null" }
+          ]
+        },
+        "processErrors": { "type": "integer", "minimum": 0 },
+        "selfCorrections": { "type": "integer", "minimum": 0 },
+        "failureReason": {
+          "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "type": "object",
+            "properties": { "status": { "const": "complete" } },
+            "required": ["status"]
+          },
+          "then": {
+            "type": "object",
+            "properties": {
+              "tokens": { "type": "number", "exclusiveMinimum": 0 },
+              "elapsedSeconds": { "type": "number", "exclusiveMinimum": 0 },
+              "failureReason": { "type": "null" }
+            }
+          },
+          "else": {
+            "type": "object",
+            "properties": {
+              "failureReason": { "type": "string", "minLength": 1 }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

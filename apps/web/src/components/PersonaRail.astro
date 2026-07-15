@@ -1,10 +1,10 @@
 ---
-import type { PersonaLocale, PersonaManifestV1 } from "@ai-agent-personas/core";
+import type { PersonaLocale, PersonaManifestV2 } from "@ai-agent-personas/core";
 import PersonaSigil from "@/components/PersonaSigil.astro";
 import { personaPath, type PersonaId } from "@/lib/site";
 
 interface Props {
-  personas: PersonaManifestV1[];
+  personas: PersonaManifestV2[];
   locale: PersonaLocale;
   selectedId?: string;
   labelledBy?: string;
@@ -16,7 +16,10 @@ const { personas, locale, selectedId, labelledBy } = Astro.props;
 <ul class="persona-rail" aria-labelledby={labelledBy} data-persona-list>
   {
     personas.map((persona) => {
-      const localized = persona.locales[locale];
+      const localized = {
+        name: persona.display.name[locale],
+        summary: persona.display.summary[locale],
+      };
       const id = persona.id as PersonaId;
 
       return (

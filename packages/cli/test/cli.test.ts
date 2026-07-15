@@ -34,6 +34,15 @@ function captureIo(): { io: CliIo; stdout: () => string; stderr: () => string } 
   };
 }
 
+function firstTaskModeId(id: string): string {
+  const manifest = JSON.parse(
+    readFileSync(join(personasDirectory, id, "persona.json"), "utf8"),
+  ) as { readonly taskModes?: readonly { readonly id?: unknown }[] };
+  const modeId = manifest.taskModes?.[0]?.id;
+  if (typeof modeId !== "string") throw new Error(`${id} has no task mode fixture.`);
+  return modeId;
+}
+
 afterEach(() => {
   for (const directory of temporaryDirectories.splice(0)) {
     rmSync(directory, { recursive: true, force: true });
@@ -47,6 +56,7 @@ describe("CLI", () => {
       EXIT_CODES.success,
     );
     expect(VERSION).toBe(packageMetadata.version);
+    expect(VERSION).toBe("0.2.0");
     expect(output.stdout()).toBe(`${packageMetadata.version}\n`);
   });
 
@@ -93,12 +103,23 @@ describe("CLI", () => {
     expect(conflict.stderr()).toContain("conflicting values");
   });
 
-  it("shows markdown and falls back to stdout when clipboard access is unavailable", () => {
+  it("defaults show and copy to the Voice layer", () => {
     const shown = captureIo();
     expect(
-      runCli(["show", "teacher"], { io: shown.io, personasDirectory }),
+      runCli(["show", "teacher", "--format", "json"], {
+        io: shown.io,
+        personasDirectory,
+      }),
     ).toBe(EXIT_CODES.success);
-    expect(shown.stdout()).toMatch(/^# PERSONA: Teacher/u);
+    const shownVoice = JSON.parse(shown.stdout()) as { prompt: string } & Record<string, unknown>;
+    expect(shownVoice).toMatchObject({
+      schemaVersion: "2.0.0",
+      manifestSchemaVersion: "2.0.0",
+      id: "teacher",
+      layer: "voice",
+      intensity: "balanced",
+    });
+    expect(shownVoice.prompt).toContain("fallback target");
 
     const copied = captureIo();
     expect(
@@ -109,7 +130,75 @@ describe("CLI", () => {
       }),
     ).toBe(EXIT_CODES.success);
     expect(copied.stderr()).toContain("Clipboard is unavailable");
-    expect(copied.stdout()).toMatch(/^PERSONA: Teacher/u);
+    expect(copied.stdout()).toContain("Teacher");
+    expect(copied.stdout()).toContain("fallback target");
+  });
+
+  it("compiles explicit Safety, Task, and Legacy layers", () => {
+    const safety = captureIo();
+    expect(
+      runCli(["show", "teacher", "--layer", "safety", "--format", "json"], {
+        io: safety.io,
+        personasDirectory,
+      }),
+    ).toBe(EXIT_CODES.success);
+    expect(JSON.parse(safety.stdout())).toMatchObject({
+      id: "teacher",
+      layer: "safety",
+    });
+    expect(JSON.parse(safety.stdout())).not.toHaveProperty("intensity");
+
+    const taskModeId = firstTaskModeId("teacher");
+    const task = captureIo();
+    expect(
+      runCli(
+        [
+          "show",
+          "teacher",
+          "--layer",
+          "task",
+          "--mode",
+          taskModeId,
+          "--format",
+          "json",
+        ],
+        { io: task.io, personasDirectory },
+      ),
+    ).toBe(EXIT_CODES.success);
+    expect(JSON.parse(task.stdout())).toMatchObject({
+      id: "teacher",
+      layer: "task",
+      taskModeId,
+    });
+    expect(JSON.parse(task.stdout())).not.toHaveProperty("intensity");
+
+    for (const intensity of ["subtle", "balanced", "immersive"] as const) {
+      const legacy = captureIo();
+      expect(
+        runCli(
+          [
+            "show",
+            "teacher",
+            "--layer",
+            "legacy",
+            "--intensity",
+            intensity,
+            "--format",
+            "json",
+          ],
+          {
+            io: legacy.io,
+            personasDirectory,
+          },
+        ),
+      ).toBe(EXIT_CODES.success);
+      expect(JSON.parse(legacy.stdout())).toMatchObject({
+        schemaVersion: "1.0.0",
+        id: "teacher",
+        intensity,
+      });
+      expect(JSON.parse(legacy.stdout())).not.toHaveProperty("layer");
+    }
   });
 
   it("exports atomically with canonical and alias output flags", () => {
@@ -127,6 +216,7 @@ describe("CLI", () => {
     expect(JSON.parse(readFileSync(canonicalFile, "utf8"))).toMatchObject({
       id: "detective",
       locale: "en",
+      layer: "voice",
       intensity: "balanced",
     });
 
@@ -148,7 +238,27 @@ describe("CLI", () => {
         personasDirectory,
       }),
     ).toBe(EXIT_CODES.success);
-    expect(readFileSync(join(root, "wizard.txt"), "utf8")).toMatch(/^PERSONA: Wizard/u);
+    expect(readFileSync(join(root, "wizard.txt"), "utf8")).toContain("Wizard");
+
+    const layerAware = captureIo();
+    expect(
+      runCli(["export", "teacher", "--layer", "safety"], {
+        io: layerAware.io,
+        cwd: root,
+        personasDirectory,
+      }),
+    ).toBe(EXIT_CODES.success);
+    expect(existsSync(join(root, "teacher.en.safety.txt"))).toBe(true);
+
+    const taskModeId = firstTaskModeId("teacher");
+    const taskExport = captureIo();
+    expect(
+      runCli(
+        ["export", "teacher", "--layer", "task", "--mode", taskModeId],
+        { io: taskExport.io, cwd: root, personasDirectory },
+      ),
+    ).toBe(EXIT_CODES.success);
+    expect(existsSync(join(root, `teacher.en.task.${taskModeId}.txt`))).toBe(true);
 
     const conflict = captureIo();
     expect(
@@ -181,8 +291,8 @@ describe("CLI", () => {
     temporaryDirectories.push(root);
     const manifest = JSON.parse(
       readFileSync(join(personasDirectory, "teacher", "persona.json"), "utf8"),
-    ) as { locales: { en: { name: string } } } & Record<string, unknown>;
-    manifest.locales.en.name = "Teacher\u001b]52;c;Zm9yZ2Vk\u0007";
+    ) as { display: { name: { en: string } } } & Record<string, unknown>;
+    manifest.display.name.en = "Teacher\u001b]52;c;Zm9yZ2Vk\u0007";
     manifest["field-\u001b]52;c;Zm9yZ2Vk\u0007"] = true;
     const directory = join(root, "teacher");
     mkdirSync(directory, { recursive: true });
@@ -193,7 +303,7 @@ describe("CLI", () => {
       EXIT_CODES.failure,
     );
     expect(output.stdout()).toBe("");
-    expect(output.stderr()).toContain("/locales/en/name");
+    expect(output.stderr()).toContain("/display/name/en");
     expect(output.stderr()).not.toMatch(/[\u001b\u0007]/u);
     expect(output.stderr()).toContain("\\u001B]52;c;Zm9yZ2Vk\\u0007");
   });
@@ -220,10 +330,17 @@ describe("CLI", () => {
   it("rejects command-specific options that would otherwise be ignored", () => {
     const cases: readonly (readonly [readonly string[], string])[] = [
       [["list", "--intensity", "subtle"], "--intensity is not valid with list"],
+      [["list", "--layer", "voice"], "--layer is not valid with list"],
       [["validate", "--lang", "ru"], "--locale is not valid with validate"],
       [["validate", "--intensity", "immersive"], "--intensity is not valid with validate"],
       [["validate", "--format", "json"], "--format is not valid with validate"],
       [["show", "teacher", "--out", "ignored.txt"], "--output is not valid with show"],
+      [["show", "teacher", "--layer", "task"], "--mode is required with --layer task"],
+      [["show", "teacher", "--mode", "explain"], "--mode is only valid with --layer task"],
+      [
+        ["show", "teacher", "--layer", "safety", "--intensity", "subtle"],
+        "--intensity is only valid with --layer voice or legacy",
+      ],
     ];
 
     for (const [argv, message] of cases) {
@@ -241,6 +358,19 @@ describe("CLI", () => {
       }),
     ).toBe(EXIT_CODES.success);
     expect(help.stdout()).toContain("Usage:");
+  });
+
+  it("rejects unknown Task modes with an actionable list", () => {
+    const output = captureIo();
+    expect(
+      runCli(
+        ["show", "teacher", "--layer", "task", "--mode", "missing-mode"],
+        { io: output.io, personasDirectory },
+      ),
+    ).toBe(EXIT_CODES.usage);
+    expect(output.stdout()).toBe("");
+    expect(output.stderr()).toContain("Unknown --mode for teacher: missing-mode");
+    expect(output.stderr()).toContain(firstTaskModeId("teacher"));
   });
 
   it("distinguishes Node runtime errors from system IO errors", () => {

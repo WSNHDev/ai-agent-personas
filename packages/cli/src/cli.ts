@@ -7,11 +7,15 @@ import {
   PersonaNotFoundError,
   PersonaSourceError,
   PersonaValidationError,
-  compilePersona,
+  compileLegacyPersona,
+  compilePersonaSafety,
+  compilePersonaTaskMode,
+  compilePersonaVoice,
   escapeTerminalControls,
   isPersonaIntensity,
   isPersonaLocale,
   isPersonaOutputFormat,
+  listPersonaTaskModes,
   listPersonas,
   validatePersonaPath,
   type PersonaIntensity,
@@ -31,18 +35,23 @@ if (typeof packageMetadata.version !== "string" || packageMetadata.version.lengt
 }
 const VERSION = packageMetadata.version;
 
+const PERSONA_LAYERS = ["voice", "safety", "task", "legacy"] as const;
+type PersonaLayer = (typeof PERSONA_LAYERS)[number];
+
 const HELP = `AI Agent Personas ${VERSION}
 
 Usage:
   ai-agent-personas list [--locale en|ru] [--format text|markdown|json]
-  ai-agent-personas show <id> [--locale en|ru] [--intensity subtle|balanced|immersive] [--format text|markdown|json]
-  ai-agent-personas copy <id> [--locale en|ru] [--intensity subtle|balanced|immersive] [--format text|markdown|json]
-  ai-agent-personas export <id> [--locale en|ru] [--intensity subtle|balanced|immersive] [--format text|markdown|json] [--output <file>]
+  ai-agent-personas show <id> [--layer voice|safety|task|legacy] [--mode <id>] [--locale en|ru] [--intensity subtle|balanced|immersive] [--format text|markdown|json]
+  ai-agent-personas copy <id> [--layer voice|safety|task|legacy] [--mode <id>] [--locale en|ru] [--intensity subtle|balanced|immersive] [--format text|markdown|json]
+  ai-agent-personas export <id> [--layer voice|safety|task|legacy] [--mode <id>] [--locale en|ru] [--intensity subtle|balanced|immersive] [--format text|markdown|json] [--output <file>]
   ai-agent-personas validate [path]
 
 Options:
   -l, --locale      Output locale (default: en; --lang is an alias)
-  -i, --intensity   Persona intensity (default: balanced)
+      --layer       Persona layer (default: voice; legacy is deprecated)
+      --mode        Task mode ID (required only with --layer task)
+  -i, --intensity   Intensity (default: balanced; Voice and deprecated Legacy only)
   -f, --format      Output format (default: text; show defaults to markdown)
   -o, --output      Export destination; use - for stdout (--out is an alias)
   -h, --help        Show help
@@ -71,6 +80,8 @@ interface ParsedCli {
   readonly command: string | undefined;
   readonly positionals: readonly string[];
   readonly locale: PersonaLocale;
+  readonly layer: PersonaLayer;
+  readonly mode: string | undefined;
   readonly intensity: PersonaIntensity;
   readonly format: PersonaOutputFormat | undefined;
   readonly output: string | undefined;
@@ -79,7 +90,7 @@ interface ParsedCli {
   readonly providedOptions: ReadonlySet<ParsedOption>;
 }
 
-type ParsedOption = "locale" | "intensity" | "format" | "output";
+type ParsedOption = "locale" | "layer" | "mode" | "intensity" | "format" | "output";
 
 const defaultIo: CliIo = {
   stdout: (text) => process.stdout.write(text),
@@ -107,6 +118,8 @@ function parseRawArgs(argv: readonly string[]) {
     options: {
       locale: { type: "string", short: "l" },
       lang: { type: "string" },
+      layer: { type: "string" },
+      mode: { type: "string" },
       intensity: { type: "string", short: "i" },
       format: { type: "string", short: "f" },
       output: { type: "string", short: "o" },
@@ -153,6 +166,8 @@ function parseCli(argv: readonly string[]): ParsedCli {
   if (parsed.values.locale !== undefined || parsed.values.lang !== undefined) {
     providedOptions.add("locale");
   }
+  if (parsed.values.layer !== undefined) providedOptions.add("layer");
+  if (parsed.values.mode !== undefined) providedOptions.add("mode");
   if (parsed.values.intensity !== undefined) providedOptions.add("intensity");
   if (rawFormat !== undefined) providedOptions.add("format");
   if (parsed.values.output !== undefined || parsed.values.out !== undefined) {
@@ -168,6 +183,13 @@ function parseCli(argv: readonly string[]): ParsedCli {
       isPersonaLocale,
       "--locale",
     ),
+    layer: parseValue(
+      parsed.values.layer,
+      "voice",
+      (value): value is PersonaLayer => (PERSONA_LAYERS as readonly string[]).includes(value),
+      "--layer",
+    ),
+    mode: parsed.values.mode,
     intensity: parseValue(
       parsed.values.intensity,
       "balanced",
@@ -253,9 +275,9 @@ function writeAtomically(file: string, contents: string): void {
 function rejectIrrelevantOptions(parsed: ParsedCli): void {
   const allowedByCommand: Readonly<Record<string, readonly ParsedOption[]>> = {
     list: ["locale", "format"],
-    show: ["locale", "intensity", "format"],
-    copy: ["locale", "intensity", "format"],
-    export: ["locale", "intensity", "format", "output"],
+    show: ["locale", "layer", "mode", "intensity", "format"],
+    copy: ["locale", "layer", "mode", "intensity", "format"],
+    export: ["locale", "layer", "mode", "intensity", "format", "output"],
     validate: [],
   };
   const allowed = parsed.command ? allowedByCommand[parsed.command] : undefined;
@@ -266,6 +288,84 @@ function rejectIrrelevantOptions(parsed: ParsedCli): void {
       throw new CliUsageError(`--${option} is not valid with ${parsed.command}.`);
     }
   }
+
+  if (!["show", "copy", "export"].includes(parsed.command ?? "")) return;
+  if (parsed.layer === "task" && !parsed.mode) {
+    throw new CliUsageError("--mode is required with --layer task.");
+  }
+  if (parsed.layer !== "task" && parsed.providedOptions.has("mode")) {
+    throw new CliUsageError("--mode is only valid with --layer task.");
+  }
+  if (
+    parsed.layer !== "voice" &&
+    parsed.layer !== "legacy" &&
+    parsed.providedOptions.has("intensity")
+  ) {
+    throw new CliUsageError("--intensity is only valid with --layer voice or legacy.");
+  }
+}
+
+function compileSelectedLayer(
+  id: string,
+  parsed: ParsedCli,
+  sourceOptions: PersonaSourceOptions,
+  format: PersonaOutputFormat,
+): string {
+  const commonOptions = {
+    ...sourceOptions,
+    locale: parsed.locale,
+    format,
+  };
+
+  switch (parsed.layer) {
+    case "voice":
+      return compilePersonaVoice(id, {
+        ...commonOptions,
+        intensity: parsed.intensity,
+      });
+    case "safety":
+      return compilePersonaSafety(id, commonOptions);
+    case "task":
+      if (!parsed.mode) {
+        throw new CliUsageError("--mode is required with --layer task.");
+      }
+      {
+        const availableModes = listPersonaTaskModes(id, {
+          ...sourceOptions,
+          locale: parsed.locale,
+        });
+        if (!availableModes.some((mode) => mode.id === parsed.mode)) {
+          throw new CliUsageError(
+            `Unknown --mode for ${id}: ${parsed.mode}. Available modes: ${availableModes.map((mode) => mode.id).join(", ")}.`,
+          );
+        }
+      }
+      return compilePersonaTaskMode(id, {
+        ...commonOptions,
+        taskModeId: parsed.mode,
+      });
+    case "legacy":
+      return compileLegacyPersona(id, {
+        ...commonOptions,
+        intensity: parsed.intensity,
+      });
+  }
+}
+
+function defaultExportName(
+  id: string,
+  parsed: ParsedCli,
+  format: PersonaOutputFormat,
+): string {
+  const suffix =
+    parsed.layer === "voice"
+      ? `voice.${parsed.intensity}`
+      : parsed.layer === "legacy"
+        ? `legacy.${parsed.intensity}`
+        : parsed.layer === "task"
+          ? `task.${parsed.mode}`
+          : parsed.layer;
+  return `${id}.${parsed.locale}.${suffix}.${extensionFor(format)}`;
 }
 
 function isSystemIoError(error: unknown): boolean {
@@ -314,26 +414,19 @@ export function runCli(argv: readonly string[], context: CliContext = {}): ExitC
         assertPositionals("show", parsed.positionals, 1);
         const id = parsed.positionals[0];
         if (!id) throw new CliUsageError("show requires a persona id.");
-        io.stdout(
-          compilePersona(id, {
-            ...sourceOptions,
-            locale: parsed.locale,
-            intensity: parsed.intensity,
-            format: parsed.format ?? "markdown",
-          }),
-        );
+        io.stdout(compileSelectedLayer(id, parsed, sourceOptions, parsed.format ?? "markdown"));
         return EXIT_CODES.success;
       }
       case "copy": {
         assertPositionals("copy", parsed.positionals, 1);
         const id = parsed.positionals[0];
         if (!id) throw new CliUsageError("copy requires a persona id.");
-        const contents = compilePersona(id, {
-          ...sourceOptions,
-          locale: parsed.locale,
-          intensity: parsed.intensity,
-          format: parsed.format ?? "text",
-        });
+        const contents = compileSelectedLayer(
+          id,
+          parsed,
+          sourceOptions,
+          parsed.format ?? "text",
+        );
         const result = (context.copyText ?? copyToClipboard)(contents);
         if (result.copied) {
           writeStderrLine(
@@ -350,17 +443,12 @@ export function runCli(argv: readonly string[], context: CliContext = {}): ExitC
         const id = parsed.positionals[0];
         if (!id) throw new CliUsageError("export requires a persona id.");
         const format = parsed.format ?? "text";
-        const contents = compilePersona(id, {
-          ...sourceOptions,
-          locale: parsed.locale,
-          intensity: parsed.intensity,
-          format,
-        });
+        const contents = compileSelectedLayer(id, parsed, sourceOptions, format);
         if (parsed.output === "-") {
           io.stdout(contents);
           return EXIT_CODES.success;
         }
-        const defaultName = `${id}.${parsed.locale}.${parsed.intensity}.${extensionFor(format)}`;
+        const defaultName = defaultExportName(id, parsed, format);
         let outputFile = resolve(cwd, parsed.output ?? defaultName);
         if (!extname(outputFile) && parsed.output) {
           outputFile = `${outputFile}.${extensionFor(format)}`;

@@ -1,0 +1,55 @@
+{
+  "schemaVersion": "1.0.0",
+  "description": "Preregistered task-mode compatibility for persona layer benchmark v2. Compatibility permits testing; it never activates a mode automatically.",
+  "personas": [
+    {
+      "id": "butler",
+      "modes": [
+        { "id": "butler-organize", "alignedFamilies": ["organization", "project-coordination"], "excludedFamilies": ["strict-extraction", "crisis-counseling"] },
+        { "id": "butler-decision-brief", "alignedFamilies": ["decision-support", "evidence-synthesis"], "excludedFamilies": ["creative-writing", "strict-extraction"] }
+      ]
+    },
+    {
+      "id": "catgirl",
+      "modes": [
+        { "id": "catgirl-creative-sprint", "alignedFamilies": ["brainstorming", "creative-ideation"], "excludedFamilies": ["strict-extraction", "high-stakes-advice"] },
+        { "id": "catgirl-small-pounce", "alignedFamilies": ["low-risk-planning", "task-unblocking"], "excludedFamilies": ["incident-response", "strict-extraction"] }
+      ]
+    },
+    {
+      "id": "detective",
+      "modes": [
+        { "id": "detective-root-cause", "alignedFamilies": ["debugging", "incident-diagnosis"], "excludedFamilies": ["strict-extraction", "casual-writing"] },
+        { "id": "detective-evidence-review", "alignedFamilies": ["evidence-synthesis", "claim-audit"], "excludedFamilies": ["creative-writing", "strict-format-rewrite"] }
+      ]
+    },
+    {
+      "id": "knight",
+      "modes": [
+        { "id": "knight-quest-plan", "alignedFamilies": ["execution-planning", "risk-managed-delivery"], "excludedFamilies": ["strict-extraction", "open-ended-therapy"] },
+        { "id": "knight-courageous-conversation", "alignedFamilies": ["difficult-conversation", "conflict-preparation"], "excludedFamilies": ["legal-advice", "strict-extraction"] }
+      ]
+    },
+    {
+      "id": "teacher",
+      "modes": [
+        { "id": "teacher-guided-learning", "alignedFamilies": ["explanation", "concept-learning"], "excludedFamilies": ["strict-extraction", "urgent-incident-response"] },
+        { "id": "teacher-practice-plan", "alignedFamilies": ["skill-practice", "learning-plan"], "excludedFamilies": ["one-shot-formatting", "strict-extraction"] }
+      ]
+    },
+    {
+      "id": "wizard",
+      "modes": [
+        { "id": "wizard-system-map", "alignedFamilies": ["systems-analysis", "architecture"], "excludedFamilies": ["strict-extraction", "simple-fact"] },
+        { "id": "wizard-concept-bridge", "alignedFamilies": ["concept-explanation", "analogy"], "excludedFamilies": ["machine-readable-output", "high-stakes-advice"] }
+      ]
+    },
+    {
+      "id": "yandere",
+      "modes": [
+        { "id": "yandere-detail-audit", "alignedFamilies": ["criteria-audit", "completeness-review"], "excludedFamilies": ["strict-extraction", "crisis-counseling"] },
+        { "id": "yandere-focus-sprint", "alignedFamilies": ["bounded-execution", "task-focus"], "excludedFamilies": ["high-risk-action", "open-ended-support"] }
+      ]
+    }
+  ]
+}

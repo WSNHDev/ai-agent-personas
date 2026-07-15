@@ -1,83 +1,63 @@
 # Architecture
 
-AI Agent Personas is a data-first monorepo. Persona manifests are the product; the core package, CLI, website, and evaluations are consumers of the same canonical data.
-
-## Dependency direction
+AI Agent Personas is a data-first monorepo. One bilingual `persona.json` is canonical; core compiles three independent runtime layers.
 
 ```text
-personas/*.json
-      │
-      ▼
-packages/core ────────► packages/cli
-      │                     │
-      ├────────────────────►│ user terminal / clipboard / files
-      │
-      ├────────────────────► apps/web ──► static GitHub Pages output
-      │
-      └────────────────────► evals ─────► optional model providers
+personas/*/persona.json (schema v2)
+             │
+             ▼
+       packages/core
+       ├─ Safety prompt ──► host pre-action policy context
+       ├─ Task prompt ────► solver, only after explicit mode selection
+       └─ Voice prompt ───► tool-free renderer of an immutable answer
+             │
+             ├────────────► packages/cli
+             ├────────────► apps/web (static)
+             └────────────► evals / offline benchmark scaffolding
 ```
 
-No consumer owns a second persona representation. The website and CLI must use the core API rather than reimplementing prompt assembly.
+No consumer owns another compiler or persona representation.
 
-## Workspace boundaries
+## Layer boundaries
 
-### `personas/`
+### Safety
 
-Canonical, versioned JSON manifests. Content uses CC BY 4.0. A manifest contains bilingual display copy, behavior rules, safety constraints, example conversations, and one modifier per intensity level.
+Compact persona-specific risk guidance that can matter before an action: coercion/dependency, authority, suspicion/profiling, unsafe obedience, violence, sexualization, or fact-obscuring fantasy. It cannot grant authority, change tool permissions, or replace host/platform enforcement.
 
-### `packages/core`
+### Task mode
 
-An internal, private workspace package and the source of truth for:
+An optional method for a compatible task, selected by stable ID. It may describe a useful workflow such as guided learning or evidence-led investigation. It cannot be inferred from intensity, widen the user's task, select tools, or override host reasoning/request budgets.
 
-- TypeScript types and the JSON schema.
-- Runtime validation and catalog discovery.
-- `listPersonas()` and `getPersona()`.
-- Deterministic `compilePersona()` output.
+### Voice
 
-The compiler performs no model call and has no provider dependency. Given the same manifest, locale, and intensity, it returns the same string.
+An output-only renderer. The solver answer is supplied as untrusted JSON data in a separate tool-free call. Voice may change cadence, headings, transitions, and motifs but preserves facts, numbers, code, recommendations, step order/count, conditions, uncertainty, citations/URLs, refusals, safety caveats, and required structure. Intensity affects Voice only.
 
-### `packages/cli`
+#### Reasoning-token boundary
 
-The sole public npm package, published as `ai-agent-personas`. It embeds and re-exports the core API and data, then adds argument parsing, terminal formatting, clipboard integration, file export, exit codes, and human-readable errors. It must not mutate persona manifests or require consumers to install the private workspace scope.
+In the default Voice-only flow, no Voice instruction is included in the solver request. Voice therefore contributes zero persona-driven reasoning tokens to the solver stage by construction. Optional Task modes are explicit solver inputs and are outside this Voice-only guarantee.
 
-### `apps/web`
+## Workspace responsibilities
 
-An Astro static site. All persona routes are generated at build time. Browser-side JavaScript is limited to filters, tabs, locale/intensity controls, copy, download, and accessible status feedback. There is no backend, database, authentication layer, or runtime model call.
+- `personas/`: canonical schema-v2 manifests and CC BY 4.0 content.
+- `packages/core`: v1/v2 schemas, validation dispatch, loading, deterministic layer/legacy compilation, Voice message assembly, and compiled assets. No model provider SDK.
+- `packages/cli`: public npm package and CLI. Bare show/copy/export use Voice; Safety, Task, and Legacy are explicit selections. Results use stdout; diagnostics use stderr.
+- `apps/web`: static Astro catalog. It displays core-produced layers and never assembles prompts in the browser.
+- `evals/`: optional model-backed Voice fidelity, Task behavior, and Safety release checks.
+- `benchmarks/persona-overhead/`: offline protocol/result contracts. Real results are ignored/private by default. A protected self-hosted workflow may emit only a same-commit cryptographic release attestation; raw prompts, answers, mappings, and individual ratings never enter the repository or its artifacts.
 
-### `evals/`
+## Version and compatibility contracts
 
-An optional Promptfoo harness for end-to-end behavior checks against a configured LLM. It consumes compiled prompts from the built core package. API-backed evals are deliberately separated from deterministic CI because they cost money and may vary over time.
-
-## Public contracts
-
-### Manifest version
-
-`schemaVersion` changes only when the manifest shape changes. Additive optional fields may use a minor version; incompatible changes require a major version and a migration guide.
-
-### Persona version
-
-Each persona has its own `version`. Patch changes fix wording without changing intent. Minor changes add examples or compatible behavior. Major changes alter the persona's promised voice or safety behavior.
-
-### Core API
-
-The core API follows semantic versioning as part of the public `ai-agent-personas` package. The internal `@ai-agent-personas/core` workspace package is never published separately. Its manifest files, compiled variants, catalog, schema, and TypeScript declarations are embedded in the public artifact so consumers can inspect source data and attribution.
-
-### CLI
-
-Commands, flags, output formats, exit codes, and stdout/stderr separation are public interfaces. Human display text may evolve; JSON output must remain machine-compatible within a major version.
-
-## Design choices
-
-- **JSON over Markdown front matter:** strict validation and predictable downstream consumption are more valuable than free-form editing.
-- **Bilingual fields together:** reviewers can compare semantic parity in one diff.
-- **Intensity as a modifier:** the canonical role remains stable while expressive language changes.
-- **Static web output:** GitHub Pages stays cheap, reliable, private-repo compatible where the account plan allows it, and easy to mirror.
-- **No provider SDK in core:** the library remains usable with any current or future LLM stack.
+- Manifest v1 remains readable for a deprecation cycle. Its legacy compiler output is frozen.
+- Built-in manifests use schema `2.0.0`; incompatible manifest changes require another major schema version.
+- `compilePersona()` and `compilePersonaManifest()` are deprecated aliases for explicit Legacy compilation. They are not silently redefined as Voice.
+- V2 Legacy is a documented Voice + Safety + one configured compatibility Task mode, never all modes.
+- Existing 42 legacy variants and `catalog.json` stay available for one cycle. New layer assets live in `compiled-v2/` and `layer-catalog.json`.
+- Persona versions track promised content behavior independently from schema/package versions.
 
 ## Failure model
 
-- Invalid manifests fail validation and builds.
-- Unknown persona IDs, locales, intensities, or output formats fail with actionable errors and non-zero CLI exit codes.
-- Clipboard failure is reported; it must not silently claim success.
-- Website copy/download controls provide visible status and retain a manual-selection fallback.
-- API-backed eval failure does not block deterministic local development unless the release checklist explicitly requires it.
+- Invalid/unknown schemas, duplicate stable IDs, broken compatibility references, unknown options, and invalid layer/mode combinations fail actionably.
+- Layer word caps fail compilation rather than truncating instructions.
+- Clipboard/UI failures remain visible and preserve manual access.
+- A renderer fidelity failure should cause the host to return the original solver answer.
+- Model-backed eval/benchmark failure blocks a release decision but remains valid, reportable evidence.

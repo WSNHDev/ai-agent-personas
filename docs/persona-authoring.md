@@ -1,119 +1,115 @@
 # Persona authoring guide
 
-A persona is a durable interaction contract, not a bag of catchphrases. It should make an agent more pleasant and predictable while preserving the quality of the underlying work.
+A schema-v2 persona is three contracts, not one role-play prompt: pre-action Safety, optional Task modes, and output-only Voice. Each lives in one canonical `personas/<id>/persona.json` and has equal English/Russian content.
 
-## Required manifest shape
+## Abbreviated v2 shape
 
-Each persona lives at `personas/<id>/persona.json` and conforms to schema version `1.0.0`.
-The example below shortens repeated arrays for readability and is not a complete, schema-valid manifest.
+The checked-in v2 JSON Schema is authoritative; arrays below are shortened.
 
 ```json
 {
-  "schemaVersion": "1.0.0",
+  "schemaVersion": "2.0.0",
   "id": "teacher",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "category": "guidance",
   "tags": ["learning", "patient"],
   "color": "#8DAA45",
-  "locales": {
-    "en": {
-      "name": "Patient Teacher",
-      "summary": "...",
-      "greeting": "...",
-      "traits": ["..."],
-      "principles": ["..."],
-      "basePrompt": "...",
-      "examples": [{ "user": "...", "assistant": "..." }]
-    },
-    "ru": {}
-  },
-  "behavior": {
-    "goals": { "en": ["..."], "ru": ["..."] },
-    "rules": { "en": ["..."], "ru": ["..."] },
-    "avoid": { "en": ["..."], "ru": ["..."] }
+  "display": {
+    "name": { "en": "Teacher", "ru": "Учитель" },
+    "summary": { "en": "...", "ru": "..." },
+    "greeting": { "en": "...", "ru": "..." }
   },
   "safety": {
     "rating": "SFW",
-    "rules": { "en": ["..."], "ru": ["..."] }
+    "risks": { "en": ["..."], "ru": ["..."] },
+    "preActionRules": { "en": ["..."], "ru": ["..."] },
+    "boundaries": { "en": ["..."], "ru": ["..."] }
   },
-  "intensity": {
-    "subtle": { "en": "...", "ru": "..." },
-    "balanced": { "en": "...", "ru": "..." },
-    "immersive": { "en": "...", "ru": "..." }
+  "taskModes": [
+    {
+      "id": "teacher-guided-learning",
+      "name": { "en": "Guided learning", "ru": "Обучение с сопровождением" },
+      "summary": { "en": "...", "ru": "..." },
+      "suitability": { "en": ["..."], "ru": ["..."] },
+      "exclusions": { "en": ["..."], "ru": ["..."] },
+      "instructions": { "en": ["..."], "ru": ["..."] }
+    }
+  ],
+  "voice": {
+    "directions": { "en": ["..."], "ru": ["..."] },
+    "avoid": { "en": ["..."], "ru": ["..."] },
+    "intensity": {
+      "subtle": { "en": "...", "ru": "..." },
+      "balanced": { "en": "...", "ru": "..." },
+      "immersive": { "en": "...", "ru": "..." }
+    },
+    "examples": [
+      {
+        "id": "concise-fact",
+        "source": { "en": "...", "ru": "..." },
+        "rendered": { "en": "...", "ru": "..." }
+      }
+    ]
   },
+  "compatibility": { "legacyTaskModeId": "teacher-guided-learning" },
   "license": "CC-BY-4.0",
   "attribution": "AI Agent Personas contributors"
 }
 ```
 
-The checked-in JSON schema is authoritative if this abbreviated example and the implementation ever differ.
+`legacyTaskModeId` must reference one declared Task mode. Task/example IDs are public compatibility identifiers: add them deliberately and do not rename them casually.
 
-Manifest strings must not contain embedded line breaks, terminal control sequences, or bidirectional text controls. Use separate array items for distinct instructions. This keeps CLI output reviewable and prevents a persona manifest from rewriting or disguising terminal output.
+## Classify each instruction once
 
-## Voice hierarchy
+Use this test:
 
-Write every prompt with this priority order:
+- Must it constrain an action before it happens because of an archetype-specific risk? Put it in Safety.
+- Is it a method that could improve only a compatible task? Put it in an explicitly named Task mode.
+- Does it affect only how an already-correct answer sounds or scans? Put it in Voice.
+- Is it generic host security, tool authorization, or platform policy? Do not put it in the persona at all.
 
-1. Platform and system safety requirements.
-2. Factual correctness and honest uncertainty.
-3. The user's explicit goal, constraints, and requested output.
-4. Accessibility, clarity, and efficient communication.
-5. Persona voice and theatrical detail.
+Duplicating a rule across layers is exceptional. A Safety boundary may be repeated in Voice only when the renderer could otherwise remove a refusal, warning, or user-agency cue.
 
-A persona must be willing to drop stylistic flourishes when they would obscure an answer, mishandle a sensitive situation, or violate the requested format.
+## Writing Voice
 
-## Writing the three intensities
+Voice directions describe cadence, register, headings, transitions, and a small motif vocabulary. They must not ask the model to investigate, teach, plan, verify, rank, call tools, add alternatives, expand scope, or produce extra steps/facts.
 
-- `subtle`: mostly neutral wording; the persona appears through structure, priorities, and an occasional metaphor.
-- `balanced`: immediately recognizable voice with restrained recurring motifs.
-- `immersive`: rich, sustained characterization that still avoids role-play actions, invented facts, or excessive preamble.
+Intensity is presentation-only:
 
-Intensity may change phrasing and presentation. It must not change factual standards, safety boundaries, willingness to follow instructions, or the substance of the answer.
+- `subtle`: mostly neutral, at most one light recognizable signal on eligible prose;
+- `balanced`: clearly recognizable but restrained. The message builder counts the source answer only: whitespace-delimited words and non-empty paragraphs separated by blank lines. A source with at least 60 words or at least 2 paragraphs gets a target of 2–3 distinct cues, including one in an existing closing when available; a shorter source gets a target of 1;
+- `immersive`: sustained style without preambles, invented framing, structure changes, or mechanical motif repetition.
 
-## Bilingual quality
+The cue budget is trusted host control, not an instruction read from `sourceAnswer`. Hosts select `presentation: "neutral"` to disable Voice; for efficiency they should bypass the renderer entirely, while the message builder also emits a trusted byte-for-byte pass-through instruction as a fail-safe. A request for neutral presentation inside the untrusted source cannot change this option.
 
-English and Russian are equal product surfaces.
+Static Voice prompts from the compiler, CLI, and website are still usable as renderer system prompts without a host wrapper. They include a lower-authority fallback that computes the same short-versus-long cue target from the source answer. `buildPersonaVoiceMessages()` omits that standalone fallback and appends the trusted host control instead.
 
-- Translate intent, rhythm, and social register rather than syntax.
-- Avoid calques and culture-specific idioms that do not survive translation.
-- Preserve the same safety boundaries and practical value.
-- Let punctuation and sentence length feel native to each language.
-- Review each language independently before comparing semantic parity.
+Cue targets apply only to eligible presentation surfaces: non-literal headings, transitions, cadence, and paragraph edges permitted by the persona directions. Exact-format text, literal technical statements, code, citations, refusals, warnings, and sensitive or high-stakes passages are ineligible. Fidelity and safety outrank the target; use fewer or zero cues when eligible prose is insufficient, and never invent a closing merely to satisfy the budget.
 
-## Examples
+Source/rendered examples are fixtures for review and evaluation. They must preserve exactly the same substance and must not be injected wholesale into runtime prompts.
 
-Include at least six examples per language and cover different task shapes:
+## Writing Task modes
 
-- a direct factual or technical answer;
-- a structured plan;
-- uncertainty or a request for missing information;
-- correction of a user's mistaken premise;
-- a sensitive or safety-adjacent request;
-- a concise answer where restraint matters.
+Name the method for the task class, not for character behavior. Built-in IDs use `<persona>-<task-class>` for stable catalog-wide references, such as `teacher-guided-learning`; the localized display name remains task-focused. State where the mode helps and where it should not be used. Instructions may define a method but cannot select tools, change permissions, widen the user's task, or override request/reasoning budgets.
 
-Examples are behavioral fixtures, not decorative prose. They should demonstrate what the prompt actually asks the model to do.
+Prefer one focused mode over a generic “be smarter” policy. Additional modes require their own suitability, exclusions, tests, and stable ID.
 
-## Safety-sensitive archetypes
+## Writing Safety
 
-Archetypes associated with possessiveness, hierarchy, seduction, violence, or servitude need explicit inversion of their risky traits.
+Describe the archetype-specific risk, the pre-action rule, and the non-negotiable boundary in plain language. Safety is not theatrical. It cannot claim to enforce permissions; the host remains responsible.
 
-- Devotion becomes continuity, attentiveness, and enthusiasm—not dependence or exclusivity.
-- Service becomes discretion and organization—not obedience to unsafe orders.
-- Chivalry becomes courage and accountability—not aggression.
-- Feline playfulness remains adult-neutral and nonsexual.
+## Bilingual review
 
-See `docs/safety.md` for the non-negotiable rules.
+Translate intent, rhythm, and social register, not syntax. Review EN and RU independently, then compare parity. Keep stable IDs language-neutral. Manifest strings contain no embedded line breaks, terminal controls, or bidirectional overrides.
 
 ## Review checklist
 
-- [ ] ID, category, tags, and color are appropriate and stable.
-- [ ] EN and RU copy are complete and natural.
-- [ ] The persona solves a recognizable class of user problems.
-- [ ] At least four traits and four principles exist per locale.
-- [ ] At least six varied examples exist per locale.
-- [ ] The three intensities are measurably different.
-- [ ] Avoid lists name persona-specific failure modes.
-- [ ] Safety rules directly address foreseeable misuse.
-- [ ] Text contains no embedded control characters or bidirectional overrides.
-- [ ] No protected character, living person, or brand voice is imitated.
+- [ ] Every instruction belongs to the correct layer.
+- [ ] Voice contains no cognitive, tool, authorization, or scope-changing verbs.
+- [ ] Source/rendered examples preserve facts, steps, code, citations, uncertainty, and safety meaning.
+- [ ] Every Task mode has clear suitability and exclusions and is never automatic.
+- [ ] Safety addresses foreseeable archetype risks without duplicating host policy.
+- [ ] EN/RU content is natural and semantically equivalent.
+- [ ] Task/example IDs and the compatibility reference pass semantic validation.
+- [ ] No named character, living person, creator, or brand voice is imitated.
 - [ ] `pnpm validate` and `pnpm check` pass.

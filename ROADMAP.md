@@ -1,9 +1,9 @@
 # Roadmap
 
-## v0.1.0 — public preview
+## v0.1.0 — initial preview
 
 - [x] Seven original personas in English and Russian.
-- [x] Three intensity levels and a stable manifest schema.
+- [x] Three intensity levels and an initial versioned manifest schema.
 - [x] Typed core API and prompt compiler.
 - [x] npm CLI with list, show, copy, export, and validate commands.
 - [x] Static, accessible Astro catalog for GitHub Pages.
@@ -15,12 +15,21 @@
 - [ ] Publish `ai-agent-personas` to npm with provenance.
 - [ ] Complete and record the final release checklist in `docs/release.md`.
 
-## v1.0.0 — stable foundation
+## v0.2.0 — layered preview
 
-- Incorporate public-preview feedback without breaking the manifest or compiler contracts.
+- [x] Split persona content into output-only Voice, opt-in Task modes, and pre-action Safety.
+- [x] Preserve an explicit v1/global migration surface without making it the default.
+- [x] Add Voice-first CLI and static website workbench.
+- [x] Add solver/renderer benchmark contracts with aligned and persona-neutral tasks.
+- [ ] Run private confirmatory Voice fidelity, human UX, Task value, and Safety gates on an exact release commit with the tracked workload and rater sample guardrails.
+- [ ] Publish measured claims only after separate reproducibility, privacy, and statistical review.
+
+## v1.0.0 — stable layered foundation
+
+- Incorporate layered-preview feedback and complete the announced one-cycle removal of v1 compatibility with migration notes.
 - Publish compatibility fixtures for the supported Node.js and agent-runtime matrix.
-- Establish public quality, safety, cost, and adoption baselines.
-- Document the stability guarantees and deprecation policy for v1.
+- Establish reviewed public quality, UX, safety, cost, and adoption baselines.
+- Document v2 stability guarantees and the completed v1 migration.
 
 ## v1.x — adoption
 
@@ -33,9 +42,9 @@
 - Public eval dashboard with cost, style-adherence, safety, and task-quality trends.
 - Search-engine metadata, social previews, and a public documentation domain.
 
-## v2 — composition
+## Later — composition
 
-- Composable voice, behavior, and domain modules.
+- Composable Voice, Task, Safety, and domain modules.
 - User-authored persona overlays with deterministic conflict resolution.
 - Signed catalog releases and machine-readable provenance.
 - A stable adapter interface for agent runtimes and prompt registries.

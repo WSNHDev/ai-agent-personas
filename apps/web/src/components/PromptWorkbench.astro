@@ -2,27 +2,55 @@
 import type {
   PersonaIntensity,
   PersonaLocale,
-  PersonaManifestV1,
+  PersonaManifestV2,
 } from "@ai-agent-personas/core";
 import UiIcon from "@/components/UiIcon.astro";
-import type { CompiledPromptMap } from "@/lib/persona-data";
+import type { CompiledLayerMap } from "@/lib/persona-data";
 import { copy, intensities, personaPath } from "@/lib/site";
 
 interface Props {
-  persona: PersonaManifestV1;
+  persona: PersonaManifestV2;
   locale: PersonaLocale;
-  prompts: CompiledPromptMap;
+  layers: CompiledLayerMap;
   mode?: "preview" | "detail";
   instance?: string;
+  commandTargetId?: string;
 }
 
-const { persona, locale, prompts, mode = "detail", instance = "main" } = Astro.props;
+const {
+  persona,
+  locale,
+  layers,
+  mode = "detail",
+  instance = "main",
+  commandTargetId,
+} = Astro.props;
 const t = copy[locale];
 const initialIntensity: PersonaIntensity = "balanced";
-const initialPrompt = prompts[locale][initialIntensity];
+const initialPrompt = layers[locale].voice[initialIntensity];
 const isPreview = mode === "preview";
 const workbenchId = `${mode}-${instance}-${persona.id}-${locale}`;
-const serializedPrompts = JSON.stringify(prompts)
+const ui =
+  locale === "en"
+    ? {
+        voice: "Voice",
+        safety: "Safety",
+        task: "Task",
+        layer: "Layer",
+        taskMode: "Task mode",
+        chooseTaskMode: "Choose a Task mode",
+        taskModeRequired: "Choose a Task mode to reveal its compiled prompt.",
+      }
+    : {
+        voice: "Голос",
+        safety: "Безопасность",
+        task: "Задача",
+        layer: "Слой",
+        taskMode: "Режим задачи",
+        chooseTaskMode: "Выберите режим задачи",
+        taskModeRequired: "Выберите режим задачи, чтобы открыть собранный промпт.",
+      };
+const serializedLayers = JSON.stringify(layers)
   .replaceAll("<", "\\u003c")
   .replaceAll("\u2028", "\\u2028")
   .replaceAll("\u2029", "\\u2029");
@@ -30,21 +58,48 @@ const serializedPrompts = JSON.stringify(prompts)
 
 <section
   class:list={["prompt-workbench", `prompt-workbench--${mode}`]}
-  aria-label={isPreview ? t.home.promptPreview : t.detail.systemPrompt}
+  aria-label={isPreview ? `${ui.voice}: ${t.home.promptPreview}` : t.detail.systemPrompt}
   data-workbench
+  data-mode={mode}
   data-copy-success={t.detail.copied}
   data-copy-failure={t.detail.copyFailed}
   data-update-success={t.detail.updated}
   data-prompt-unavailable={t.detail.promptUnavailable}
-  data-file-name={`${persona.id}-persona-prompt.txt`}
+  data-task-mode-required={ui.taskModeRequired}
+  data-prompt-label={t.detail.prompt}
+  data-voice-label={ui.voice}
+  data-safety-label={ui.safety}
+  data-task-label={ui.task}
   data-persona-id={persona.id}
+  data-command-target={commandTargetId}
 >
   <slot name="identity" />
+
+  {
+    !isPreview && (
+      <div class="layer-tabs" role="tablist" aria-label={ui.layer} data-layer-tabs>
+        {(["voice", "safety", "task"] as const).map((layer, index) => (
+          <button
+            class="layer-tab"
+            type="button"
+            role="tab"
+            aria-selected={layer === "voice" ? "true" : "false"}
+            aria-controls={`${workbenchId}-prompt-region`}
+            tabindex={index === 0 ? "0" : "-1"}
+            data-layer={layer}
+          >
+            {ui[layer]}
+          </button>
+        ))}
+      </div>
+    )
+  }
+
   <div class="prompt-workbench__controls">
-    <label class="field-control">
+    <label class="field-control" data-intensity-field>
       <span>{t.detail.intensity}</span>
       <span class="select-wrap">
-        <select data-intensity aria-controls={`${workbenchId}-prompt`}>
+        <select data-intensity aria-controls={`${workbenchId}-prompt-region`}>
           {
             intensities.map((intensity) => (
               <option value={intensity} selected={intensity === initialIntensity}>
@@ -57,6 +112,23 @@ const serializedPrompts = JSON.stringify(prompts)
       </span>
     </label>
 
+    {
+      !isPreview && (
+        <label class="field-control" data-task-mode-field hidden>
+          <span>{ui.taskMode}</span>
+          <span class="select-wrap">
+            <select data-task-mode aria-controls={`${workbenchId}-prompt-region`}>
+              <option value="">{ui.chooseTaskMode}</option>
+              {layers[locale].taskModes.map((taskMode) => (
+                <option value={taskMode.id}>{taskMode.name}</option>
+              ))}
+            </select>
+            <UiIcon name="chevron" size={18} />
+          </span>
+        </label>
+      )
+    }
+
     <label class="field-control">
       <span>{t.detail.language}</span>
       <span class="select-wrap">
@@ -66,7 +138,7 @@ const serializedPrompts = JSON.stringify(prompts)
           data-mode={isPreview ? "preview" : "navigate"}
           data-en-url={personaPath("en", persona.id)}
           data-ru-url={personaPath("ru", persona.id)}
-          aria-controls={`${workbenchId}-prompt`}
+          aria-controls={`${workbenchId}-prompt-region`}
         >
           <option value="en" selected={locale === "en"}>{t.labels.english}</option>
           <option value="ru" selected={locale === "ru"}>{t.labels.russian}</option>
@@ -76,9 +148,12 @@ const serializedPrompts = JSON.stringify(prompts)
     </label>
   </div>
 
-  <div class="prompt-workbench__prompt">
-    <span class="eyebrow">{isPreview ? t.home.promptPreview : t.detail.systemPrompt}</span>
-    <pre id={`${workbenchId}-prompt`} tabindex="0"><code data-prompt-output>{initialPrompt}</code></pre>
+  <div class="prompt-workbench__prompt" id={`${workbenchId}-prompt-region`}>
+    <span class="eyebrow" data-prompt-heading>
+      {isPreview ? `${ui.voice}: ${t.home.promptPreview}` : `${ui.voice} ${t.detail.prompt}`}
+    </span>
+    <pre tabindex="0" data-prompt-container><code data-prompt-output>{initialPrompt}</code></pre>
+    <p class="prompt-workbench__empty" data-task-empty hidden>{ui.taskModeRequired}</p>
   </div>
 
   <div class="prompt-workbench__actions">
@@ -97,117 +172,248 @@ const serializedPrompts = JSON.stringify(prompts)
     <span class="action-status" role="status" aria-live="polite" data-action-status></span>
   </div>
 
-  <script is:inline type="application/json" data-prompt-data set:html={serializedPrompts}></script>
+  <script is:inline type="application/json" data-layer-data set:html={serializedLayers}></script>
 </section>
 
 <script>
+  type RuntimeLayer = "voice" | "safety" | "task";
+  type RuntimeTaskMode = {
+    id: string;
+    name: string;
+    summary: string;
+    suitability: string[];
+    exclusions: string[];
+    prompt: string;
+  };
+  type RuntimeLocaleLayers = {
+    safety: string;
+    voice: Record<string, string>;
+    taskModes: RuntimeTaskMode[];
+  };
+  type RuntimeLayerMap = Record<string, RuntimeLocaleLayers>;
+
+  const runtimeLocales = ["en", "ru"] as const;
+  const runtimeIntensities = ["subtle", "balanced", "immersive"] as const;
+  const runtimeLayers = ["voice", "safety", "task"] as const;
+
+  function isRuntimeLayer(value: string | null): value is RuntimeLayer {
+    return value !== null && (runtimeLayers as readonly string[]).includes(value);
+  }
+
+  function isLayerMap(value: unknown): value is RuntimeLayerMap {
+    if (typeof value !== "object" || value === null) return false;
+    const candidate = value as Record<string, unknown>;
+    return runtimeLocales.every((locale) => {
+      const localized = candidate[locale];
+      if (typeof localized !== "object" || localized === null) return false;
+      const layers = localized as Record<string, unknown>;
+      if (typeof layers.safety !== "string" || layers.safety.length === 0) return false;
+      if (typeof layers.voice !== "object" || layers.voice === null) return false;
+      const voice = layers.voice as Record<string, unknown>;
+      if (
+        !runtimeIntensities.every(
+          (intensity) => typeof voice[intensity] === "string" && voice[intensity].length > 0,
+        )
+      ) {
+        return false;
+      }
+      if (!Array.isArray(layers.taskModes) || layers.taskModes.length === 0) return false;
+      return layers.taskModes.every(
+        (taskMode) =>
+          typeof taskMode === "object" &&
+          taskMode !== null &&
+          typeof taskMode.id === "string" &&
+          typeof taskMode.name === "string" &&
+          typeof taskMode.summary === "string" &&
+          Array.isArray(taskMode.suitability) &&
+          Array.isArray(taskMode.exclusions) &&
+          typeof taskMode.prompt === "string" &&
+          taskMode.prompt.length > 0,
+      );
+    });
+  }
+
   function initializeWorkbench(workbench: HTMLElement) {
     if (workbench.dataset.ready === "true") return;
     workbench.dataset.ready = "true";
 
     const intensity = workbench.querySelector<HTMLSelectElement>("[data-intensity]");
+    const intensityField = workbench.querySelector<HTMLElement>("[data-intensity-field]");
+    const taskMode = workbench.querySelector<HTMLSelectElement>("[data-task-mode]");
+    const taskModeField = workbench.querySelector<HTMLElement>("[data-task-mode-field]");
     const locale = workbench.querySelector<HTMLSelectElement>("[data-locale]");
     const output = workbench.querySelector<HTMLElement>("[data-prompt-output]");
-    const dataNode = workbench.querySelector<HTMLScriptElement>("[data-prompt-data]");
+    const promptContainer = workbench.querySelector<HTMLElement>("[data-prompt-container]");
+    const taskEmpty = workbench.querySelector<HTMLElement>("[data-task-empty]");
+    const heading = workbench.querySelector<HTMLElement>("[data-prompt-heading]");
+    const dataNode = workbench.querySelector<HTMLScriptElement>("[data-layer-data]");
     const status = workbench.querySelector<HTMLElement>("[data-action-status]");
-    if (!intensity || !locale || !output || !dataNode || !status) return;
-
-    type RuntimePromptMap = Record<string, Record<string, string>>;
-    const isPromptMap = (value: unknown): value is RuntimePromptMap => {
-      if (typeof value !== "object" || value === null) return false;
-      const candidate = value as Record<string, unknown>;
-      return ["en", "ru"].every((localeKey) => {
-        const localized = candidate[localeKey];
-        if (typeof localized !== "object" || localized === null) return false;
-        const variants = localized as Record<string, unknown>;
-        return ["subtle", "balanced", "immersive"].every(
-          (intensityKey) =>
-            typeof variants[intensityKey] === "string" && variants[intensityKey].length > 0,
-        );
-      });
-    };
-
-    let parsedPrompts: unknown;
-    try {
-      parsedPrompts = JSON.parse(dataNode.textContent || "{}");
-    } catch (error) {
-      parsedPrompts = error;
+    const copyButton = workbench.querySelector<HTMLButtonElement>("[data-copy-prompt]");
+    const downloadButton = workbench.querySelector<HTMLButtonElement>("[data-download-prompt]");
+    const command = workbench.dataset.commandTarget
+      ? document.getElementById(workbench.dataset.commandTarget)
+      : null;
+    const layerTabs = Array.from(
+      workbench.querySelectorAll<HTMLButtonElement>("[data-layer]"),
+    );
+    if (
+      !intensity ||
+      !intensityField ||
+      !locale ||
+      !output ||
+      !promptContainer ||
+      !taskEmpty ||
+      !heading ||
+      !dataNode ||
+      !status ||
+      !copyButton
+    ) {
+      return;
     }
 
-    if (!isPromptMap(parsedPrompts)) {
+    let parsedLayers: unknown;
+    try {
+      parsedLayers = JSON.parse(dataNode.textContent || "{}");
+    } catch (error) {
+      parsedLayers = error;
+    }
+
+    if (!isLayerMap(parsedLayers)) {
       const message = workbench.dataset.promptUnavailable ?? "Prompt data is unavailable.";
       output.textContent = message;
       status.textContent = message;
       intensity.disabled = true;
       locale.disabled = true;
-      workbench
-        .querySelectorAll<HTMLButtonElement>("[data-copy-prompt], [data-download-prompt]")
-        .forEach((button) => {
-          button.disabled = true;
-        });
-      console.error("AI Agent Personas: invalid prompt data", parsedPrompts);
+      if (taskMode) taskMode.disabled = true;
+      copyButton.disabled = true;
+      if (downloadButton) downloadButton.disabled = true;
+      console.error("AI Agent Personas: invalid compiled layer data", parsedLayers);
       return;
     }
-    const prompts = parsedPrompts;
+    const stages = parsedLayers;
+    let activeLayer: RuntimeLayer = "voice";
 
-    const currentPrompt = () => {
-      const prompt = prompts[locale.value]?.[intensity.value];
-      if (!prompt) throw new Error("Prompt selection is outside the compiled prompt matrix.");
-      return prompt;
+    const layerLabel = (layer: RuntimeLayer): string =>
+      workbench.dataset[`${layer}Label`] ?? layer;
+
+    const selectedTaskMode = (): RuntimeTaskMode | undefined =>
+      stages[locale.value]?.taskModes.find((candidate) => candidate.id === taskMode?.value);
+
+    const currentPrompt = (): string | undefined => {
+      const localized = stages[locale.value];
+      if (!localized) return undefined;
+      if (activeLayer === "voice") return localized.voice[intensity.value];
+      if (activeLayer === "safety") return localized.safety;
+      return selectedTaskMode()?.prompt;
+    };
+
+    const selectionLabel = (): string => {
+      const parts: Array<string | null | undefined> = [
+        layerLabel(activeLayer),
+        locale.selectedOptions[0]?.textContent,
+      ];
+      if (activeLayer === "voice") parts.push(intensity.selectedOptions[0]?.textContent);
+      if (activeLayer === "task") parts.push(taskMode?.selectedOptions[0]?.textContent);
+      return parts.filter(Boolean).join(" · ");
+    };
+
+    const currentCommand = (): string => {
+      const base = `npx ai-agent-personas show ${workbench.dataset.personaId} --layer ${activeLayer}`;
+      if (activeLayer === "voice") {
+        return `${base} --locale ${locale.value} --intensity ${intensity.value}`;
+      }
+      if (activeLayer === "task") {
+        return `${base} --mode ${taskMode?.value || "<task-mode-id>"} --locale ${locale.value}`;
+      }
+      return `${base} --locale ${locale.value}`;
     };
 
     const updatePrompt = (announce = true) => {
-      output.textContent = currentPrompt();
-      const selection = [
-        locale.selectedOptions[0]?.textContent,
-        intensity.selectedOptions[0]?.textContent,
-      ]
-        .filter(Boolean)
-        .join(" · ");
-      status.textContent = announce
-        ? `${workbench.dataset.updateSuccess ?? "Prompt updated"}: ${selection}`
-        : "";
+      intensityField.hidden = activeLayer !== "voice";
+      if (taskModeField) taskModeField.hidden = activeLayer !== "task";
+      layerTabs.forEach((tab) => {
+        const selected = tab.dataset.layer === activeLayer;
+        tab.setAttribute("aria-selected", String(selected));
+        tab.tabIndex = selected ? 0 : -1;
+      });
+      heading.textContent = `${layerLabel(activeLayer)} ${workbench.dataset.promptLabel ?? "prompt"}`;
+
+      const prompt = currentPrompt();
+      const hasPrompt = typeof prompt === "string" && prompt.length > 0;
+      promptContainer.hidden = !hasPrompt;
+      taskEmpty.hidden = hasPrompt;
+      output.textContent = prompt ?? "";
+      copyButton.disabled = !hasPrompt;
+      if (downloadButton) downloadButton.disabled = !hasPrompt;
+      if (command) command.textContent = currentCommand();
+
+      if (announce) {
+        status.textContent = hasPrompt
+          ? `${workbench.dataset.updateSuccess ?? "Prompt updated"}: ${selectionLabel()}`
+          : workbench.dataset.taskModeRequired ?? "Choose a Task mode.";
+      }
     };
 
-    intensity.addEventListener("change", () => {
-      updatePrompt();
-      document.dispatchEvent(
-        new CustomEvent("persona:intensity", {
-          detail: {
-            personaId: workbench.dataset.personaId,
-            intensity: intensity.value,
-          },
-        }),
-      );
+    const selectLayer = (layer: RuntimeLayer, announce = true, moveFocus = false) => {
+      activeLayer = layer;
+      updatePrompt(announce);
+      if (moveFocus) layerTabs.find((tab) => tab.dataset.layer === layer)?.focus();
+    };
+
+    layerTabs.forEach((tab, index) => {
+      const layer = tab.dataset.layer;
+      if (!layer || !isRuntimeLayer(layer)) return;
+      tab.addEventListener("click", () => selectLayer(layer));
+      tab.addEventListener("keydown", (event) => {
+        let nextIndex: number | undefined;
+        if (event.key === "ArrowRight") nextIndex = (index + 1) % layerTabs.length;
+        if (event.key === "ArrowLeft") {
+          nextIndex = (index - 1 + layerTabs.length) % layerTabs.length;
+        }
+        if (event.key === "Home") nextIndex = 0;
+        if (event.key === "End") nextIndex = layerTabs.length - 1;
+        if (nextIndex === undefined) return;
+        const nextLayer = layerTabs[nextIndex]?.dataset.layer;
+        if (!nextLayer || !isRuntimeLayer(nextLayer)) return;
+        event.preventDefault();
+        selectLayer(nextLayer, true, true);
+      });
     });
 
-    document.addEventListener("persona:intensity", (event) => {
-      const detail = (event as CustomEvent<{ personaId?: string; intensity?: string }>).detail;
-      if (
-        detail.personaId !== workbench.dataset.personaId ||
-        !detail.intensity ||
-        detail.intensity === intensity.value ||
-        !prompts[locale.value]?.[detail.intensity]
-      ) {
-        return;
-      }
-      intensity.value = detail.intensity;
-      updatePrompt();
-    });
+    intensity.addEventListener("change", () => updatePrompt());
+    taskMode?.addEventListener("change", () => updatePrompt());
     locale.addEventListener("change", () => {
       if (locale.dataset.mode === "navigate") {
         const nextUrl = locale.value === "ru" ? locale.dataset.ruUrl : locale.dataset.enUrl;
-        if (nextUrl) window.location.assign(`${nextUrl}?intensity=${intensity.value}#workbench`);
+        if (!nextUrl) return;
+        const parameters = new URLSearchParams({ layer: activeLayer });
+        if (activeLayer === "voice") parameters.set("intensity", intensity.value);
+        if (activeLayer === "task" && taskMode?.value) parameters.set("mode", taskMode.value);
+        window.location.assign(`${nextUrl}?${parameters.toString()}#workbench`);
         return;
       }
       updatePrompt();
     });
 
-    const requestedIntensity = new URLSearchParams(window.location.search).get("intensity");
-    if (requestedIntensity && prompts[locale.value]?.[requestedIntensity]) {
+    const parameters = new URLSearchParams(window.location.search);
+    const requestedIntensity = parameters.get("intensity");
+    if (
+      requestedIntensity &&
+      runtimeIntensities.includes(requestedIntensity as (typeof runtimeIntensities)[number])
+    ) {
       intensity.value = requestedIntensity;
-      updatePrompt(false);
     }
+    const requestedMode = parameters.get("mode");
+    if (
+      requestedMode &&
+      taskMode &&
+      Array.from(taskMode.options).some((option) => option.value === requestedMode)
+    ) {
+      taskMode.value = requestedMode;
+    }
+    const requestedLayer = parameters.get("layer");
+    if (layerTabs.length > 0 && isRuntimeLayer(requestedLayer)) activeLayer = requestedLayer;
+    updatePrompt(false);
 
     const copyText = async (value: string) => {
       if (navigator.clipboard?.writeText) {
@@ -234,11 +440,13 @@ const serializedPrompts = JSON.stringify(prompts)
       return copied;
     };
 
-    workbench.querySelector("[data-copy-prompt]")?.addEventListener("click", async () => {
+    copyButton.addEventListener("click", async () => {
+      const prompt = currentPrompt();
+      if (!prompt) return;
       try {
-        const copied = await copyText(currentPrompt());
+        const copied = await copyText(prompt);
         if (copied) {
-          status.textContent = workbench.dataset.copySuccess ?? "Copied";
+          status.textContent = `${workbench.dataset.copySuccess ?? "Copied"}: ${selectionLabel()}`;
           return;
         }
       } catch {
@@ -250,17 +458,26 @@ const serializedPrompts = JSON.stringify(prompts)
       const selection = window.getSelection();
       selection?.removeAllRanges();
       selection?.addRange(range);
-      status.textContent = workbench.dataset.copyFailure ?? "Copy failed";
+      status.textContent = `${workbench.dataset.copyFailure ?? "Copy failed"}: ${selectionLabel()}`;
     });
 
-    workbench.querySelector("[data-download-prompt]")?.addEventListener("click", () => {
-      const blob = new Blob([currentPrompt()], { type: "text/plain;charset=utf-8" });
+    downloadButton?.addEventListener("click", () => {
+      const prompt = currentPrompt();
+      if (!prompt) return;
+      const suffix =
+        activeLayer === "voice"
+          ? `voice.${intensity.value}`
+          : activeLayer === "task"
+            ? `task.${taskMode?.value}`
+            : "safety";
+      const blob = new Blob([prompt], { type: "text/plain;charset=utf-8" });
       const url = URL.createObjectURL(blob);
       const anchor = document.createElement("a");
       anchor.href = url;
-      anchor.download = workbench.dataset.fileName ?? "persona-prompt.txt";
+      anchor.download = `${workbench.dataset.personaId}.${locale.value}.${suffix}.txt`;
       anchor.click();
       URL.revokeObjectURL(url);
+      status.textContent = `${layerLabel(activeLayer)}: ${anchor.download}`;
     });
   }
 

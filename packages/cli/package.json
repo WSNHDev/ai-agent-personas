@@ -1,6 +1,6 @@
 {
   "name": "ai-agent-personas",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Browse, compile, copy, export, and validate portable AI agent personas.",
   "type": "module",
   "files": [
@@ -20,7 +20,14 @@
       "import": "./dist/index.js"
     },
     "./schema": "./dist/schema/persona.schema.json",
-    "./catalog.json": "./dist/core/catalog.json"
+    "./schema/v1": "./dist/schema/persona.schema.json",
+    "./schema/v2": "./dist/schema/persona-v2.schema.json",
+    "./schema/persona-v1.json": "./dist/schema/persona.schema.json",
+    "./schema/persona-v2.json": "./dist/schema/persona-v2.schema.json",
+    "./catalog.json": "./dist/core/catalog.json",
+    "./layer-catalog.json": "./dist/core/layer-catalog.json",
+    "./compiled/*": "./dist/core/compiled/*",
+    "./compiled-v2/*": "./dist/core/compiled-v2/*"
   },
   "scripts": {
     "prelint": "node scripts/embed-core.mjs",

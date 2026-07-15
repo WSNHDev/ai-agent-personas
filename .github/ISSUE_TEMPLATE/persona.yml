@@ -28,8 +28,15 @@ body:
   - type: textarea
     id: voice
     attributes:
-      label: Voice and behavior
-      description: Describe traits, principles, recurring motifs, and what changes at each intensity.
+      label: Output-only Voice
+      description: Describe presentation directions, recurring motifs, avoid rules, and what changes at each Voice intensity without changing the answer's substance.
+    validations:
+      required: true
+  - type: textarea
+    id: task_modes
+    attributes:
+      label: Optional Task modes
+      description: Name compatible task methods, where each helps, and where it must not be activated.
     validations:
       required: true
   - type: textarea
@@ -43,14 +50,14 @@ body:
     id: risks
     attributes:
       label: Risks and mitigations
-      description: Name foreseeable coercion, bias, safety, impersonation, or usability risks and how the prompt prevents them.
+      description: Name archetype-specific coercion, bias, safety, impersonation, or usability risks and the pre-action boundaries that mitigate them.
     validations:
       required: true
   - type: textarea
     id: examples
     attributes:
-      label: Example exchange
-      description: Give one short example in English and one in Russian.
+      label: Voice transformation example
+      description: Give one neutral source and a substance-preserving rendered answer in English and Russian.
     validations:
       required: true
   - type: checkboxes
