@@ -1,0 +1,315 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://wsnhdev.github.io/ai-agent-personas/schema/persona-layer-benchmark-result-v2.json",
+  "title": "Persona layer benchmark result v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "id", "runKind", "commit", "persona", "runtime", "protocol", "workloads", "ux"],
+  "properties": {
+    "schemaVersion": { "const": 2 },
+    "id": { "$ref": "#/$defs/id" },
+    "runKind": { "enum": ["protocol-validation", "pilot", "screening", "confirmatory"] },
+    "commit": { "type": "string", "pattern": "^[a-f0-9]{40}$" },
+    "persona": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "version", "manifestSchemaVersion", "locale", "intensity", "taskModeId"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "version": { "$ref": "#/$defs/semver" },
+        "manifestSchemaVersion": { "const": "2.0.0" },
+        "locale": { "enum": ["en", "ru"] },
+        "intensity": { "enum": ["subtle", "balanced", "immersive"] },
+        "taskModeId": { "$ref": "#/$defs/id" }
+      }
+    },
+    "runtime": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["surface", "model", "modelSettingsSha256", "toolPolicySha256", "rendererPolicySha256", "rendererToolPolicySha256", "timingMode", "seed", "armOrder"],
+      "properties": {
+        "surface": { "type": "string", "minLength": 1 },
+        "model": { "type": "string", "minLength": 1 },
+        "modelSettingsSha256": { "$ref": "#/$defs/sha256" },
+        "toolPolicySha256": { "$ref": "#/$defs/sha256" },
+        "rendererPolicySha256": { "$ref": "#/$defs/sha256" },
+        "rendererToolPolicySha256": { "$ref": "#/$defs/sha256" },
+        "timingMode": { "enum": ["counterbalanced-sequential", "isolated-resources"] },
+        "seed": { "type": "integer", "minimum": 0 },
+        "armOrder": {
+          "type": "array",
+          "minItems": 5,
+          "maxItems": 5,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/armId" }
+        }
+      }
+    },
+    "protocol": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["protocolArtifactSha256", "compatibilityMatrixSha256", "workloadCatalogSha256", "lengthMatching", "nonInferiorityMargin", "taskQualityMinimumDelta", "confidence", "judge", "tokenBudgetRatio", "timeBudgetRatio", "taskTokenBudgetRatio", "taskTimeBudgetRatio", "criticalSafetyThreshold", "ux"],
+      "properties": {
+        "protocolArtifactSha256": { "$ref": "#/$defs/sha256" },
+        "compatibilityMatrixSha256": { "$ref": "#/$defs/sha256" },
+        "workloadCatalogSha256": { "$ref": "#/$defs/sha256" },
+        "lengthMatching": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["method", "targetArm", "toleranceWords", "planSha256"],
+          "properties": {
+            "method": { "type": "string", "minLength": 1 },
+            "targetArm": { "const": "legacy-global" },
+            "toleranceWords": { "type": "integer", "minimum": 0, "maximum": 10 },
+            "planSha256": { "$ref": "#/$defs/sha256" }
+          }
+        },
+        "nonInferiorityMargin": { "const": 3 },
+        "taskQualityMinimumDelta": { "const": 1 },
+        "confidence": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["method", "confidenceLevel", "seed", "samples", "minimumWorkloadPairs", "minimumCompatibleTaskPairs", "minimumRatersPerWorkload", "minimumTotalRaters", "samplePlanSha256"],
+          "properties": {
+            "method": { "const": "one-sided-workload-bootstrap" },
+            "confidenceLevel": { "const": 0.95 },
+            "seed": { "const": 20260715 },
+            "samples": { "const": 10000 },
+            "minimumWorkloadPairs": { "const": 8 },
+            "minimumCompatibleTaskPairs": { "const": 4 },
+            "minimumRatersPerWorkload": { "const": 8 },
+            "minimumTotalRaters": { "const": 64 },
+            "samplePlanSha256": { "$ref": "#/$defs/sha256" }
+          }
+        },
+        "judge": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["identity", "version", "configurationSha256", "rubricSha256", "seed", "judgePayloadSha256", "evaluatorEvidenceSha256"],
+          "properties": {
+            "identity": { "type": "string", "minLength": 1 },
+            "version": { "type": "string", "minLength": 1 },
+            "configurationSha256": { "$ref": "#/$defs/sha256" },
+            "rubricSha256": { "$ref": "#/$defs/sha256" },
+            "seed": { "type": "integer", "minimum": 0 },
+            "judgePayloadSha256": { "$ref": "#/$defs/sha256" },
+            "evaluatorEvidenceSha256": { "$ref": "#/$defs/sha256" }
+          }
+        },
+        "tokenBudgetRatio": { "const": 1.25 },
+        "timeBudgetRatio": { "const": 1.25 },
+        "taskTokenBudgetRatio": { "const": 1.1 },
+        "taskTimeBudgetRatio": { "const": 1.1 },
+        "criticalSafetyThreshold": { "const": 0 },
+        "ux": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["humanRated", "armLabelsBlinded", "presentationRandomized", "randomizationMappingSha256", "raterAttestationSha256", "dimensions", "preferenceScoreMinimum", "voiceRecognitionRateMinimum", "voiceRecognitionLiftMinimum", "secondaryNonInferiorityMargin"],
+          "properties": {
+            "humanRated": { "const": true },
+            "armLabelsBlinded": { "const": true },
+            "presentationRandomized": { "const": true },
+            "randomizationMappingSha256": { "$ref": "#/$defs/sha256" },
+            "raterAttestationSha256": { "$ref": "#/$defs/sha256" },
+            "dimensions": {
+              "const": ["pairwise-preference", "persona-identification", "clarity", "trust", "perceived-effort", "intent-to-reuse"]
+            },
+            "preferenceScoreMinimum": { "const": 0.6 },
+            "voiceRecognitionRateMinimum": { "const": 0.6 },
+            "voiceRecognitionLiftMinimum": { "const": 0.3 },
+            "secondaryNonInferiorityMargin": { "const": 0.5 }
+          }
+        }
+      }
+    },
+    "workloads": {
+      "type": "array",
+      "minItems": 2,
+      "items": { "$ref": "#/$defs/workload" }
+    },
+    "ux": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/uxResult" }
+    }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]*$" },
+    "semver": { "type": "string", "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$" },
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "armId": { "enum": ["control", "length-matched-neutral", "legacy-global", "control-voice", "task-voice"] },
+    "tokens": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["input", "cachedInput", "reasoning", "output"],
+      "properties": {
+        "input": { "type": ["integer", "null"], "minimum": 0 },
+        "cachedInput": { "type": ["integer", "null"], "minimum": 0 },
+        "reasoning": { "type": ["integer", "null"], "minimum": 0 },
+        "output": { "type": ["integer", "null"], "minimum": 0 }
+      }
+    },
+    "stage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["artifactSha256", "promptSha256", "promptBytes", "promptWords", "modelRequests", "tokens", "elapsedSeconds"],
+      "properties": {
+        "artifactSha256": { "$ref": "#/$defs/sha256" },
+        "promptSha256": { "$ref": "#/$defs/sha256" },
+        "promptBytes": { "type": "integer", "minimum": 0 },
+        "promptWords": { "type": "integer", "minimum": 0 },
+        "modelRequests": { "type": ["integer", "null"], "minimum": 0 },
+        "tokens": { "$ref": "#/$defs/tokens" },
+        "elapsedSeconds": { "type": ["number", "null"], "minimum": 0 }
+      }
+    },
+    "rendererStage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["artifactSha256", "promptSha256", "promptBytes", "promptWords", "modelRequests", "tokens", "elapsedSeconds", "inputArtifactSha256", "rendererPolicySha256", "toolsEnabled", "toolPolicySha256"],
+      "properties": {
+        "artifactSha256": { "$ref": "#/$defs/sha256" },
+        "promptSha256": { "$ref": "#/$defs/sha256" },
+        "promptBytes": { "type": "integer", "minimum": 0 },
+        "promptWords": { "type": "integer", "minimum": 0 },
+        "modelRequests": { "type": ["integer", "null"], "minimum": 0 },
+        "tokens": { "$ref": "#/$defs/tokens" },
+        "elapsedSeconds": { "type": ["number", "null"], "minimum": 0 },
+        "inputArtifactSha256": { "$ref": "#/$defs/sha256" },
+        "rendererPolicySha256": { "$ref": "#/$defs/sha256" },
+        "toolsEnabled": { "const": false },
+        "toolPolicySha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "selection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["solver", "renderer", "taskModeId"],
+      "properties": {
+        "solver": { "enum": ["neutral", "length-matched-neutral", "legacy", "task"] },
+        "renderer": { "enum": ["neutral", "voice"] },
+        "taskModeId": { "anyOf": [{ "$ref": "#/$defs/id" }, { "type": "null" }] }
+      }
+    },
+    "taskQuality": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["score", "maximum", "judge", "judgePayloadSha256"],
+      "properties": {
+        "score": { "type": "number", "minimum": 0 },
+        "maximum": { "const": 100 },
+        "judge": { "enum": ["human", "automated", "hybrid"] },
+        "judgePayloadSha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "arm": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["selection", "solver", "renderer", "taskQuality", "safety", "excludedReason"],
+      "properties": {
+        "selection": { "$ref": "#/$defs/selection" },
+        "solver": { "$ref": "#/$defs/stage" },
+        "renderer": { "anyOf": [{ "$ref": "#/$defs/rendererStage" }, { "type": "null" }] },
+        "taskQuality": { "anyOf": [{ "$ref": "#/$defs/taskQuality" }, { "type": "null" }] },
+        "safety": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["criticalFailures", "nonCriticalFailures"],
+          "properties": {
+            "criticalFailures": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["id", "description"],
+                "properties": {
+                  "id": { "$ref": "#/$defs/id" },
+                  "description": { "type": "string", "minLength": 1 }
+                }
+              }
+            },
+            "nonCriticalFailures": { "type": "integer", "minimum": 0 }
+          }
+        },
+        "excludedReason": { "type": ["string", "null"], "minLength": 1 }
+      }
+    },
+    "workload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "family", "fixtureId", "fixtureSha256", "alignment", "taskModeCompatible", "arms"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "family": { "$ref": "#/$defs/id" },
+        "fixtureId": { "$ref": "#/$defs/id" },
+        "fixtureSha256": { "$ref": "#/$defs/sha256" },
+        "alignment": { "enum": ["persona-aligned", "persona-neutral"] },
+        "taskModeCompatible": { "type": "boolean" },
+        "arms": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["control", "length-matched-neutral", "legacy-global", "control-voice", "task-voice"],
+          "properties": {
+            "control": { "$ref": "#/$defs/arm" },
+            "length-matched-neutral": { "$ref": "#/$defs/arm" },
+            "legacy-global": { "$ref": "#/$defs/arm" },
+            "control-voice": { "$ref": "#/$defs/arm" },
+            "task-voice": { "$ref": "#/$defs/arm" }
+          }
+        }
+      }
+    },
+    "meanPair": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["control", "voice"],
+      "properties": {
+        "control": { "type": "number", "minimum": 1, "maximum": 7 },
+        "voice": { "type": "number", "minimum": 1, "maximum": 7 }
+      }
+    },
+    "identificationCounts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["correct", "incorrect", "unsure"],
+      "properties": {
+        "correct": { "type": "integer", "minimum": 0 },
+        "incorrect": { "type": "integer", "minimum": 0 },
+        "unsure": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "personaIdentification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["control", "voice"],
+      "properties": {
+        "control": { "$ref": "#/$defs/identificationCounts" },
+        "voice": { "$ref": "#/$defs/identificationCounts" }
+      }
+    },
+    "uxResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["workloadId", "raters", "preference", "personaIdentification", "clarity", "trust", "perceivedEffort", "intentToReuse"],
+      "properties": {
+        "workloadId": { "$ref": "#/$defs/id" },
+        "raters": { "type": "integer", "minimum": 1 },
+        "preference": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["control", "voice", "tie"],
+          "properties": {
+            "control": { "type": "integer", "minimum": 0 },
+            "voice": { "type": "integer", "minimum": 0 },
+            "tie": { "type": "integer", "minimum": 0 }
+          }
+        },
+        "personaIdentification": { "$ref": "#/$defs/personaIdentification" },
+        "clarity": { "$ref": "#/$defs/meanPair" },
+        "trust": { "$ref": "#/$defs/meanPair" },
+        "perceivedEffort": { "$ref": "#/$defs/meanPair" },
+        "intentToReuse": { "$ref": "#/$defs/meanPair" }
+      }
+    }
+  }
+}

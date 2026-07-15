@@ -11,6 +11,7 @@
 - [ ] `pnpm validate`
 - [ ] `pnpm check`
 - [ ] Relevant EN and RU behavior was reviewed
+- [ ] Voice, Task, and Safety instructions remain in their own layers
 - [ ] Website changes were checked at desktop and mobile sizes
 - [ ] New or changed behavior has tests or eval coverage
 

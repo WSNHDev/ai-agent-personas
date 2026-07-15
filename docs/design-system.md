@@ -38,7 +38,7 @@ Typography uses Cormorant Garamond for display and editorial titles, Inter for U
 - `Hero`: copy column plus one functional prompt-preview workspace.
 - `PersonaSigil`: shared shield geometry with persona-specific central symbol and color.
 - `PersonaRail`: open, ruled horizontal list; selected state adds a single outline.
-- `PromptWorkbench`: language/intensity controls, compiled prompt, copy/download actions.
+- `PromptWorkbench`: Voice/Safety/Task tabs, language controls, Voice-only intensity, explicit Task-mode selection, compiled layer, copy/download actions.
 - `IntensityBand`: three comparable columns; `balanced` is selected by default.
 - `PrincipleList`: numbered open rows with small line icons.
 - `CommandBand`: mono command with copy action.
@@ -62,14 +62,15 @@ Typography uses Cormorant Garamond for display and editorial titles, Inter for U
 - `EN / RU`
 - `Open-source persona library for AI agents`
 - `Give your agent a voice worth remembering.`
-- `Seven original, safety-aware personas. Bilingual by design. Ready for any LLM.`
+- `Seven original, safety-aware personas. Bilingual by design. Provider-neutral.`
 - `Explore the personas`
 - `Install the CLI`
 - `npx ai-agent-personas list`
 - `Detective`
+- `Voice`
 - `Balanced`
 - `English`
-- `Copy prompt`
+- `Copy Voice prompt`
 
 The approved eyebrow is plain editorial text, not a badge. No additional kicker, badge, metric, testimonial, model logo, decorative pill, gradient or glow may be added above the fold.
 

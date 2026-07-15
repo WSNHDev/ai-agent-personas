@@ -146,8 +146,107 @@ jobs:
           --run-attempt "$EVAL_RUN_ATTEMPT"
           --repository "$GH_REPOSITORY"
 
+      - name: Download the successful private benchmark attestation
+        id: persona_benchmark
+        shell: bash
+        env:
+          GH_REPOSITORY: ${{ github.repository }}
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_COMMIT: ${{ steps.release_commit.outputs.commit }}
+        run: |
+          set -euo pipefail
+          api="https://api.github.com/repos/$GH_REPOSITORY"
+          runs_json="$RUNNER_TEMP/persona-benchmark-runs.json"
+          artifacts_json="$RUNNER_TEMP/persona-benchmark-artifacts.json"
+          archive="$RUNNER_TEMP/persona-benchmark-attestation.zip"
+          directory="$RUNNER_TEMP/persona-benchmark-attestation"
+
+          curl --fail-with-body --silent --show-error --get \
+            --header "Authorization: Bearer $GH_TOKEN" \
+            --header "Accept: application/vnd.github+json" \
+            --header "X-GitHub-Api-Version: 2022-11-28" \
+            --data-urlencode "event=workflow_dispatch" \
+            --data-urlencode "status=success" \
+            --data-urlencode "head_sha=$RELEASE_COMMIT" \
+            --data-urlencode "per_page=100" \
+            "$api/actions/workflows/persona-benchmark.yml/runs" > "$runs_json"
+
+          run_record=$(jq -r --arg commit "$RELEASE_COMMIT" '
+            [.workflow_runs[]
+              | select(
+                  .head_sha == $commit and
+                  .event == "workflow_dispatch" and
+                  .status == "completed" and
+                  .conclusion == "success"
+                )]
+            | sort_by(.run_number)
+            | last
+            | if . == null then empty else [.id, .run_attempt] | @tsv end
+          ' "$runs_json")
+          IFS=$'\t' read -r run_id run_attempt <<< "$run_record"
+          if [[ ! "$run_id" =~ ^[1-9][0-9]*$ || ! "$run_attempt" =~ ^[1-9][0-9]*$ ]]; then
+            echo "No successful manual confirmatory persona benchmark exists for $RELEASE_COMMIT." >&2
+            exit 1
+          fi
+
+          curl --fail-with-body --silent --show-error --get \
+            --header "Authorization: Bearer $GH_TOKEN" \
+            --header "Accept: application/vnd.github+json" \
+            --header "X-GitHub-Api-Version: 2022-11-28" \
+            --data-urlencode "per_page=100" \
+            "$api/actions/runs/$run_id/artifacts" > "$artifacts_json"
+
+          artifact_name="persona-benchmark-attestation-$RELEASE_COMMIT"
+          artifact_id=$(jq -r --arg name "$artifact_name" '
+            [.artifacts[] | select(.name == $name and (.expired | not))]
+            | sort_by(.created_at)
+            | last
+            | .id // empty
+          ' "$artifacts_json")
+          if [[ ! "$artifact_id" =~ ^[1-9][0-9]*$ ]]; then
+            echo "Run $run_id has no unexpired $artifact_name artifact." >&2
+            exit 1
+          fi
+
+          curl --fail-with-body --silent --show-error --location \
+            --header "Authorization: Bearer $GH_TOKEN" \
+            --header "Accept: application/vnd.github+json" \
+            --header "X-GitHub-Api-Version: 2022-11-28" \
+            "$api/actions/artifacts/$artifact_id/zip" \
+            --output "$archive"
+          mkdir -p "$directory"
+          unzip -q "$archive" -d "$directory"
+          test -f "$directory/persona-benchmark-attestation.json"
+          entry_count=$(find "$directory" -mindepth 1 | wc -l | tr -d ' ')
+          if [[ "$entry_count" != "1" ]]; then
+            echo "The persona benchmark artifact must contain only its attestation." >&2
+            exit 1
+          fi
+
+          echo "directory=$directory" >> "$GITHUB_OUTPUT"
+          echo "run_attempt=$run_attempt" >> "$GITHUB_OUTPUT"
+          echo "run_id=$run_id" >> "$GITHUB_OUTPUT"
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Build the canonical core compiler assets
+        run: pnpm --filter @ai-agent-personas/core build
+
+      - name: Verify private benchmark provenance and release gate
+        env:
+          BENCHMARK_ARTIFACT_DIRECTORY: ${{ steps.persona_benchmark.outputs.directory }}
+          BENCHMARK_RUN_ATTEMPT: ${{ steps.persona_benchmark.outputs.run_attempt }}
+          BENCHMARK_RUN_ID: ${{ steps.persona_benchmark.outputs.run_id }}
+          GH_REPOSITORY: ${{ github.repository }}
+          RELEASE_COMMIT: ${{ steps.release_commit.outputs.commit }}
+        run: >-
+          node scripts/verify-persona-benchmark-attestation.mjs
+          --attestation "$BENCHMARK_ARTIFACT_DIRECTORY/persona-benchmark-attestation.json"
+          --commit "$RELEASE_COMMIT"
+          --run-id "$BENCHMARK_RUN_ID"
+          --run-attempt "$BENCHMARK_RUN_ATTEMPT"
+          --repository "$GH_REPOSITORY"
 
       - name: Run deterministic release checks
         run: pnpm check

@@ -1,0 +1,69 @@
+{
+  "schemaVersion": "1.0.0",
+  "fixtures": [
+    {
+      "id": "detective-investigation-a",
+      "personaId": "detective",
+      "taskModeId": "detective-root-cause",
+      "family": "debugging",
+      "alignment": "persona-aligned",
+      "path": "workloads/persona-aligned-investigation-v2.md"
+    },
+    {
+      "id": "detective-investigation-b",
+      "personaId": "detective",
+      "taskModeId": "detective-root-cause",
+      "family": "debugging",
+      "alignment": "persona-aligned",
+      "path": "workloads/persona-aligned-investigation-v2-b.md"
+    },
+    {
+      "id": "detective-investigation-c",
+      "personaId": "detective",
+      "taskModeId": "detective-root-cause",
+      "family": "debugging",
+      "alignment": "persona-aligned",
+      "path": "workloads/persona-aligned-investigation-v2-c.md"
+    },
+    {
+      "id": "detective-investigation-d",
+      "personaId": "detective",
+      "taskModeId": "detective-root-cause",
+      "family": "debugging",
+      "alignment": "persona-aligned",
+      "path": "workloads/persona-aligned-investigation-v2-d.md"
+    },
+    {
+      "id": "detective-extraction-a",
+      "personaId": "detective",
+      "taskModeId": "detective-root-cause",
+      "family": "strict-extraction",
+      "alignment": "persona-neutral",
+      "path": "workloads/persona-neutral-extraction-v2.md"
+    },
+    {
+      "id": "detective-extraction-b",
+      "personaId": "detective",
+      "taskModeId": "detective-root-cause",
+      "family": "strict-extraction",
+      "alignment": "persona-neutral",
+      "path": "workloads/persona-neutral-extraction-v2-b.md"
+    },
+    {
+      "id": "detective-extraction-c",
+      "personaId": "detective",
+      "taskModeId": "detective-root-cause",
+      "family": "strict-extraction",
+      "alignment": "persona-neutral",
+      "path": "workloads/persona-neutral-extraction-v2-c.md"
+    },
+    {
+      "id": "detective-extraction-d",
+      "personaId": "detective",
+      "taskModeId": "detective-root-cause",
+      "family": "strict-extraction",
+      "alignment": "persona-neutral",
+      "path": "workloads/persona-neutral-extraction-v2-d.md"
+    }
+  ]
+}

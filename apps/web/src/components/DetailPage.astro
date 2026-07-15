@@ -1,27 +1,34 @@
 ---
-import type { PersonaLocale, PersonaManifestV1 } from "@ai-agent-personas/core";
-import PersonaControls from "@/components/PersonaControls.astro";
+import type { PersonaLocale, PersonaManifestV2 } from "@ai-agent-personas/core";
 import PersonaSigil from "@/components/PersonaSigil.astro";
 import PromptWorkbench from "@/components/PromptWorkbench.astro";
 import UiIcon from "@/components/UiIcon.astro";
 import BaseLayout from "@/layouts/BaseLayout.astro";
-import { compilePromptMap } from "@/lib/persona-data";
+import { compileLayerMap } from "@/lib/persona-data";
 import { copy, localePath, personaPath, type PersonaId } from "@/lib/site";
 
 interface Props {
   locale: PersonaLocale;
-  persona: PersonaManifestV1;
+  persona: PersonaManifestV2;
 }
 
 const { locale, persona } = Astro.props;
 const t = copy[locale];
-const localized = persona.locales[locale];
+const localized = {
+  name: persona.display.name[locale],
+  summary: persona.display.summary[locale],
+};
 const id = persona.id as PersonaId;
-const prompts = compilePromptMap(persona.id);
+const layers = compileLayerMap(persona.id);
 const alternateDetail = personaPath(locale === "en" ? "ru" : "en", persona.id);
 const tabPrefix = `${persona.id}-${locale}`;
-const safetyRules = persona.safety.rules[locale];
-const cliCommand = `npx ai-agent-personas show ${persona.id} --locale ${locale} --intensity balanced`;
+const cliCommandId = `${persona.id}-${locale}-cli-command`;
+const safetyRules = [
+  ...persona.safety.preActionRules[locale],
+  ...persona.safety.boundaries[locale],
+];
+const boundariesLabel = locale === "en" ? "Boundaries" : "Границы";
+const cliCommand = `npx ai-agent-personas show ${persona.id} --layer voice --locale ${locale} --intensity balanced`;
 ---
 
 <BaseLayout
@@ -47,9 +54,8 @@ const cliCommand = `npx ai-agent-personas show ${persona.id} --locale ${locale} 
         <hr class="section-rule" />
         <p class="detail-hero__summary">{localized.summary}</p>
         <ul class="detail-hero__traits" aria-label={locale === "en" ? "Traits" : "Черты"}>
-          {localized.traits.map((trait) => <li>{trait}</li>)}
+          {persona.taskModes.map((taskMode) => <li>{taskMode.name[locale]}</li>)}
         </ul>
-        <PersonaControls personaId={persona.id} locale={locale} />
       </div>
     </div>
   </section>
@@ -59,7 +65,7 @@ const cliCommand = `npx ai-agent-personas show ${persona.id} --locale ${locale} 
       <h2 id="workbench-title">{t.detail.principles}</h2>
       <ul class="principle-list">
         {
-          localized.principles.map((principle, index) => (
+          persona.voice.directions[locale].map((principle, index) => (
             <li>
               <UiIcon name={index % 2 === 0 ? "spark" : "check"} />
               <span>{principle}</span>
@@ -105,7 +111,7 @@ const cliCommand = `npx ai-agent-personas show ${persona.id} --locale ${locale} 
           tabindex="-1"
           data-tab="safety"
         >
-          {t.detail.safety}
+          {boundariesLabel}
         </button>
       </div>
 
@@ -119,9 +125,10 @@ const cliCommand = `npx ai-agent-personas show ${persona.id} --locale ${locale} 
         <PromptWorkbench
           persona={persona}
           locale={locale}
-          prompts={prompts}
+          layers={layers}
           mode="detail"
           instance="content"
+          commandTargetId={cliCommandId}
         />
       </div>
 
@@ -135,12 +142,12 @@ const cliCommand = `npx ai-agent-personas show ${persona.id} --locale ${locale} 
       >
         <dl class="examples-list">
           {
-            localized.examples.map((example) => (
+            persona.voice.examples.map((example) => (
               <div class="example-row">
                 <dt>{t.detail.user}</dt>
-                <dd>{example.user}</dd>
+                <dd>{example.source[locale]}</dd>
                 <dt>{t.detail.assistant}</dt>
-                <dd>{example.assistant}</dd>
+                <dd>{example.rendered[locale]}</dd>
               </div>
             ))
           }
@@ -183,7 +190,7 @@ const cliCommand = `npx ai-agent-personas show ${persona.id} --locale ${locale} 
     <div class="command-band">
       <span class="command-band__lead">
         <UiIcon name="terminal" />
-        <code>{cliCommand}</code>
+        <code id={cliCommandId}>{cliCommand}</code>
       </span>
     </div>
   </section>
@@ -194,8 +201,12 @@ const cliCommand = `npx ai-agent-personas show ${persona.id} --locale ${locale} 
     if (tabset.dataset.ready === "true") return;
     tabset.dataset.ready = "true";
 
-    const tabs = Array.from(tabset.querySelectorAll<HTMLButtonElement>("[role='tab']"));
-    const panels = Array.from(tabset.querySelectorAll<HTMLElement>("[role='tabpanel']"));
+    const tabs = Array.from(
+      tabset.querySelectorAll<HTMLButtonElement>(":scope > .detail-tabs > [role='tab']"),
+    );
+    const panels = Array.from(
+      tabset.querySelectorAll<HTMLElement>(":scope > [role='tabpanel']"),
+    );
 
     const selectTab = (next: HTMLButtonElement, moveFocus = false) => {
       tabs.forEach((tab) => {

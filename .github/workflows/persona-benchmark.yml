@@ -1,0 +1,123 @@
+name: Private persona benchmark attestation
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: persona-benchmark-attestation
+  cancel-in-progress: false
+
+jobs:
+  attest:
+    name: Validate a private confirmatory benchmark
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
+    runs-on: [self-hosted, linux, persona-evals]
+    timeout-minutes: 15
+    environment: model-evaluations
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 24
+
+      - name: Build the canonical core compiler assets
+        shell: bash
+        run: |
+          corepack enable
+          pnpm install --frozen-lockfile
+          pnpm --filter @ai-agent-personas/core build
+
+      - name: Require private evidence outside the checkout
+        shell: bash
+        env:
+          PERSONA_BENCHMARK_RESULT_PATH: ${{ vars.PERSONA_BENCHMARK_RESULT_PATH }}
+          PERSONA_BENCHMARK_RANDOMIZATION_MAPPING_PATH: ${{ vars.PERSONA_BENCHMARK_RANDOMIZATION_MAPPING_PATH }}
+          PERSONA_BENCHMARK_RATER_ATTESTATION_PATH: ${{ vars.PERSONA_BENCHMARK_RATER_ATTESTATION_PATH }}
+          PERSONA_BENCHMARK_EVALUATOR_EVIDENCE_PATH: ${{ vars.PERSONA_BENCHMARK_EVALUATOR_EVIDENCE_PATH }}
+        run: |
+          set -euo pipefail
+          workspace_path=$(realpath -e -- "$GITHUB_WORKSPACE")
+          for variable in \
+            PERSONA_BENCHMARK_RESULT_PATH \
+            PERSONA_BENCHMARK_RANDOMIZATION_MAPPING_PATH \
+            PERSONA_BENCHMARK_RATER_ATTESTATION_PATH \
+            PERSONA_BENCHMARK_EVALUATOR_EVIDENCE_PATH; do
+            configured_path=${!variable:-}
+            if [[ -z "$configured_path" ]]; then
+              echo "The protected model-evaluations environment must define $variable." >&2
+              exit 1
+            fi
+            if ! private_path=$(realpath -e -- "$configured_path" 2>/dev/null); then
+              echo "The private artifact configured by $variable is unavailable." >&2
+              exit 1
+            fi
+            case "$private_path" in
+              "$workspace_path"|"$workspace_path"/*)
+                echo "Private benchmark evidence must live outside the repository checkout." >&2
+                exit 1
+                ;;
+            esac
+            test -f "$private_path"
+          done
+
+      - name: Enforce the confirmatory benchmark gate
+        shell: bash
+        env:
+          PERSONA_BENCHMARK_RESULT_PATH: ${{ vars.PERSONA_BENCHMARK_RESULT_PATH }}
+          PERSONA_BENCHMARK_RANDOMIZATION_MAPPING_PATH: ${{ vars.PERSONA_BENCHMARK_RANDOMIZATION_MAPPING_PATH }}
+          PERSONA_BENCHMARK_RATER_ATTESTATION_PATH: ${{ vars.PERSONA_BENCHMARK_RATER_ATTESTATION_PATH }}
+          PERSONA_BENCHMARK_EVALUATOR_EVIDENCE_PATH: ${{ vars.PERSONA_BENCHMARK_EVALUATOR_EVIDENCE_PATH }}
+        run: |
+          if ! node scripts/persona-layer-benchmark-report.mjs \
+            "$PERSONA_BENCHMARK_RESULT_PATH" \
+            --json \
+            --gate \
+            --expected-commit "$GITHUB_SHA" \
+            --randomization-mapping "$PERSONA_BENCHMARK_RANDOMIZATION_MAPPING_PATH" \
+            --rater-attestation "$PERSONA_BENCHMARK_RATER_ATTESTATION_PATH" \
+            --evaluator-evidence "$PERSONA_BENCHMARK_EVALUATOR_EVIDENCE_PATH" \
+            > /dev/null 2>&1; then
+            echo "The private confirmatory persona benchmark did not pass." >&2
+            exit 1
+          fi
+
+      - name: Create the privacy-preserving attestation
+        shell: bash
+        env:
+          PERSONA_BENCHMARK_RESULT_PATH: ${{ vars.PERSONA_BENCHMARK_RESULT_PATH }}
+          PERSONA_BENCHMARK_RANDOMIZATION_MAPPING_PATH: ${{ vars.PERSONA_BENCHMARK_RANDOMIZATION_MAPPING_PATH }}
+          PERSONA_BENCHMARK_RATER_ATTESTATION_PATH: ${{ vars.PERSONA_BENCHMARK_RATER_ATTESTATION_PATH }}
+          PERSONA_BENCHMARK_EVALUATOR_EVIDENCE_PATH: ${{ vars.PERSONA_BENCHMARK_EVALUATOR_EVIDENCE_PATH }}
+          PERSONA_BENCHMARK_ATTESTATION_PATH: ${{ runner.temp }}/persona-benchmark-attestation.json
+        run: |
+          if ! node scripts/write-persona-benchmark-attestation.mjs > /dev/null 2>&1; then
+            echo "The privacy-preserving benchmark attestation could not be created." >&2
+            exit 1
+          fi
+
+      - name: Verify attestation provenance
+        env:
+          PERSONA_BENCHMARK_ATTESTATION_PATH: ${{ runner.temp }}/persona-benchmark-attestation.json
+        run: >-
+          node scripts/verify-persona-benchmark-attestation.mjs
+          --attestation "$PERSONA_BENCHMARK_ATTESTATION_PATH"
+          --commit "$GITHUB_SHA"
+          --run-id "$GITHUB_RUN_ID"
+          --run-attempt "$GITHUB_RUN_ATTEMPT"
+          --repository "$GITHUB_REPOSITORY"
+
+      - name: Upload only the benchmark attestation
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: persona-benchmark-attestation-${{ github.sha }}
+          path: ${{ runner.temp }}/persona-benchmark-attestation.json
+          if-no-files-found: error
+          retention-days: 30

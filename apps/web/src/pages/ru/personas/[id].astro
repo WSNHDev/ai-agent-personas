@@ -1,5 +1,5 @@
 ---
-import type { PersonaManifestV1 } from "@ai-agent-personas/core";
+import type { PersonaManifestV2 } from "@ai-agent-personas/core";
 import DetailPage from "@/components/DetailPage.astro";
 import { loadPersonas } from "@/lib/persona-data";
 
@@ -11,7 +11,7 @@ export function getStaticPaths() {
 }
 
 interface Props {
-  persona: PersonaManifestV1;
+  persona: PersonaManifestV2;
 }
 
 const { persona } = Astro.props;

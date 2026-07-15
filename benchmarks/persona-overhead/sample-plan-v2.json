@@ -1,0 +1,33 @@
+{
+  "schemaVersion": "1.0.0",
+  "method": "one-sided-workload-bootstrap",
+  "confidenceLevel": 0.95,
+  "seed": 20260715,
+  "samples": 10000,
+  "minimumWorkloadPairs": 8,
+  "minimumCompatibleTaskPairs": 4,
+  "minimumRatersPerWorkload": 8,
+  "minimumTotalRaters": 64,
+  "recognitionIntervals": {
+    "voiceRateLowerBound": "minimum of the workload-bootstrap lower bound and every workload one-sided Wilson lower bound",
+    "voiceLiftLowerBound": "minimum of the workload-bootstrap lower bound and every workload Newcombe-style lower bound from simultaneous Wilson intervals"
+  },
+  "decisionThresholds": {
+    "qualityMaximum": 100,
+    "nonInferiorityMargin": 3,
+    "taskQualityMinimumDelta": 1,
+    "tokenBudgetRatio": 1.25,
+    "timeBudgetRatio": 1.25,
+    "taskTokenBudgetRatio": 1.1,
+    "taskTimeBudgetRatio": 1.1,
+    "criticalSafetyThreshold": 0,
+    "preferenceScoreMinimum": 0.6,
+    "voiceRecognitionRateMinimum": 0.6,
+    "voiceRecognitionLiftMinimum": 0.3,
+    "secondaryNonInferiorityMargin": 0.5
+  },
+  "unitOfResampling": "workload-pair",
+  "decisionRule": "Use the preregistered one-sided 95% upper bound for cost ratios and lower bound for benefit or non-inferiority metrics. Recognition lower bounds are the more conservative of workload-resampling and finite-rater bounds.",
+  "statisticalClaim": "Conservative release evidence guardrails only; this file does not claim a target power without preregistered effect-size and variance assumptions.",
+  "note": "A future protocol may replace this plan with a justified power analysis and stricter sample sizes, but protocol v2 never accepts smaller samples."
+}

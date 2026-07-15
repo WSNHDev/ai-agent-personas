@@ -50,9 +50,10 @@ On PowerShell, use `Copy-Item .env.example .env` for the first command.
 Follow `docs/persona-authoring.md` and `docs/safety.md`. A persona pull request should include:
 
 - complete English and Russian copy;
-- examples covering at least six task shapes per language;
-- distinct subtle, balanced, and immersive modifiers;
-- persona-specific avoid and safety rules;
+- at least three bilingual source/rendered Voice fixtures that preserve identical substance;
+- distinct subtle, balanced, and immersive Voice modifiers;
+- explicit Task modes with suitability and exclusions;
+- compact persona-specific risks, pre-action rules, and boundaries;
 - updated tests or eval cases when behavior changes;
 - a short explanation of the practical user need the persona solves.
 
@@ -61,6 +62,7 @@ Do not imitate a named copyrighted character, public figure, creator, or living 
 ## Code changes
 
 - Keep the core package provider-neutral and deterministic.
+- Keep Voice output-only, Task modes explicit, and host enforcement outside persona prompts.
 - Keep CLI behavior scriptable: stdout for results, stderr for warnings/errors, non-zero exit codes on failure.
 - Keep the website statically buildable and accessible without client-side JavaScript for primary content.
 - Avoid adding dependencies when a small, maintained internal solution is sufficient.

@@ -1,6 +1,6 @@
 {
   "name": "@ai-agent-personas/core",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "Typed manifests, validation, and deterministic prompt compilation for AI Agent Personas.",
   "type": "module",
@@ -15,7 +15,14 @@
       "import": "./dist/index.js"
     },
     "./schema": "./schema/persona.schema.json",
-    "./catalog.json": "./dist/catalog.json"
+    "./schema/v1": "./schema/persona.schema.json",
+    "./schema/v2": "./schema/persona-v2.schema.json",
+    "./schema/persona-v1.json": "./schema/persona.schema.json",
+    "./schema/persona-v2.json": "./schema/persona-v2.schema.json",
+    "./catalog.json": "./dist/catalog.json",
+    "./layer-catalog.json": "./dist/layer-catalog.json",
+    "./compiled/*": "./dist/compiled/*",
+    "./compiled-v2/*": "./dist/compiled-v2/*"
   },
   "scripts": {
     "prebuild": "node scripts/clean.mjs",

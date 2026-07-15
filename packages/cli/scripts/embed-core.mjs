@@ -28,6 +28,10 @@ await cp(
   resolve(coreDirectory, "schema/persona.schema.json"),
   resolve(schemaDirectory, "persona.schema.json"),
 );
+await cp(
+  resolve(coreDirectory, "schema/persona-v2.schema.json"),
+  resolve(schemaDirectory, "persona-v2.schema.json"),
+);
 
 const tsc = resolve(coreDirectory, "node_modules/typescript/bin/tsc");
 run(
