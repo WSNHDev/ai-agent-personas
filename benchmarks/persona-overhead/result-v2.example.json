@@ -90,7 +90,7 @@
       "id": "synthetic-aligned-a",
       "family": "debugging",
       "fixtureId": "detective-investigation-a",
-      "fixtureSha256": "bc0ee9ee2ec4a345b43e03840d2e9ad51f8c4ecbce89d67cfd602249005a823e",
+      "fixtureSha256": "58493c0fb1dcd2571d043d7cd8dfc570aecd73f9c02c52f4b112e6a47f58f3c2",
       "alignment": "persona-aligned",
       "taskModeCompatible": true,
       "arms": {
