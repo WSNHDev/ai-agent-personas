@@ -1,6 +1,6 @@
 # Roadmap
 
-## v1.0.0 — public foundation
+## v0.1.0 — public preview
 
 - [x] Seven original personas in English and Russian.
 - [x] Three intensity levels and a stable manifest schema.
@@ -9,9 +9,18 @@
 - [x] Static, accessible Astro catalog for GitHub Pages.
 - [x] Unit, schema, build, and optional model-based eval checks.
 - [x] Dual code/content licensing and contribution governance.
-- [ ] Complete the final release checklist in `docs/release.md`.
+- [ ] Run the model-backed release eval on the exact release commit.
+- [ ] Change the repository from private to public and enable community/security features.
+- [ ] Deploy the public catalog through GitHub Pages.
 - [ ] Publish `ai-agent-personas` to npm with provenance.
-- [ ] Change the repository from private to public.
+- [ ] Complete and record the final release checklist in `docs/release.md`.
+
+## v1.0.0 — stable foundation
+
+- Incorporate public-preview feedback without breaking the manifest or compiler contracts.
+- Publish compatibility fixtures for the supported Node.js and agent-runtime matrix.
+- Establish public quality, safety, cost, and adoption baselines.
+- Document the stability guarantees and deprecation policy for v1.
 
 ## v1.x — adoption
 

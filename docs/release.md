@@ -6,6 +6,7 @@ Releases are deliberate because one release can change three public surfaces: th
 
 - Maintainer access to the GitHub repository.
 - npm publish rights for `ai-agent-personas`.
+- A public repository, required for npm provenance and for the full GitHub Free protection set used by this project.
 - A protected `model-evaluations` environment with required reviewer approval and `OPENAI_API_KEY` access.
 - A protected `npm` environment with required reviewer approval and either the `NPM_TOKEN` secret or npm trusted publishing configured.
 - GitHub Pages set to **GitHub Actions** as its publishing source.
@@ -48,21 +49,22 @@ suite again on the new commit before publishing its GitHub Release.
 
 ## First public release
 
-For `v1.0.0`, additionally:
+For the first public release, additionally:
 
 1. Confirm the README does not expose private planning notes or credentials.
 2. Confirm every code and content file has a clear license path.
 3. Review git history for secrets and unintended generated artifacts.
 4. Reserve the npm package name before announcing the project.
-5. Publish the npm package and verify it from a clean environment.
-6. Change repository visibility to public only after the package and site are ready.
-7. Enable and test Private Vulnerability Reporting, then provide a dedicated confidential conduct-reporting contact.
-8. Enable Discussions, issue templates, branch protection, Dependabot, and the security policy.
-9. Change the Pages workflow from manual-only to the reviewed public-launch trigger and deploy from `main`.
-10. Announce a single canonical website URL and repository URL.
+5. Confirm a confidential conduct-reporting channel without exposing a private maintainer address unintentionally.
+6. Change repository visibility to public so GitHub protections and npm provenance can be enforced.
+7. Enable and test Private Vulnerability Reporting, Discussions, issue templates, rulesets, Dependabot, and the security policy.
+8. Create and protect the `model-evaluations`, `npm`, and `github-pages` environments.
+9. Run the model-backed evaluation on the exact release commit and review its attested artifact.
+10. Deploy the site from `main` through GitHub Pages and verify all EN/RU routes.
+11. Publish the npm package and verify provenance, package files, executable behavior, and a clean install.
+12. Announce a single canonical website URL and repository URL.
 
-Visibility changes and npm publication are external, difficult-to-reverse operations. The workflow prepares them but never performs either from an ordinary pull request.
-During private incubation, the Pages workflow is intentionally manual-only to prevent an accidental public site deployment.
+Visibility changes and npm publication are external, difficult-to-reverse operations. The workflow prepares them but never performs either from an ordinary pull request. The Pages workflow deploys only reviewed `main` changes that affect the website or its canonical persona data.
 
 ## Rollback
 

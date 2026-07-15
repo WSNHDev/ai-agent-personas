@@ -1,9 +1,18 @@
 name: Deploy website
 
 on:
-  # Keep deployment explicit while the repository is in private incubation.
-  # Add a push trigger when the v1 launch checklist is complete.
   workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/deploy.yml
+      - apps/web/**
+      - packages/core/**
+      - personas/**
+      - package.json
+      - pnpm-lock.yaml
+      - pnpm-workspace.yaml
 
 permissions:
   contents: read

@@ -4,7 +4,7 @@ An open-source, safety-aware persona library that gives AI agents a distinctive 
 
 [Русская версия](README.ru.md)
 
-> The repository is in private incubation. The catalog, CLI, website, validation, and evaluation harness are being prepared for the public `v1.0.0` release.
+> Public preview: the catalog, CLI, website, validation, and evaluation harness are being launched together as `v0.1.0`. The stable `v1.0.0` milestone remains quality-gated rather than date-driven.
 
 ## What is included
 
@@ -99,4 +99,4 @@ Read [CONTRIBUTING.md](CONTRIBUTING.md). Persona proposals use the issue templat
 
 ## Status and roadmap
 
-The public launch criteria and post-v1 priorities live in [ROADMAP.md](ROADMAP.md). No npm publication or public-visibility change is performed by a normal CI run; both are explicit release operations.
+Preview launch progress and the path to a stable v1 live in [ROADMAP.md](ROADMAP.md). npm publication remains an explicit, evaluated release operation; the website deploys from reviewed changes on `main`.
