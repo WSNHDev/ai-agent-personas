@@ -26,6 +26,6 @@
     "release:verify": "node scripts/verify-release.mjs"
   },
   "devDependencies": {
-    "promptfoo": "^0.121.18"
+    "promptfoo": "^0.122.2"
   }
 }
