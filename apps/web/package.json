@@ -16,7 +16,7 @@
   },
   "dependencies": {
     "@ai-agent-personas/core": "workspace:*",
-    "astro": "^7.0.7"
+    "astro": "^7.2.8"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.9",
